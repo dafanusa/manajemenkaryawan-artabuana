@@ -136,7 +136,7 @@
                     @if($doc)
                     <div class="flex items-center gap-1.5 mt-1">
                         <button type="button"
-                                @click="openFilePreview('{{ $doc->url }}', '{{ $docLabel }}', '{{ $doc->original_name ?? basename($doc->file_path) }}')"
+                                @click="openFilePreview('{{ $doc->url }}', '{{ $docLabel }}', '{{ $doc->original_name ?? basename($doc->file_path) }}', '{{ route('documents.download', $doc->id) }}')"
                                 class="text-[10px] text-teal-700 hover:text-teal-900 font-bold flex items-center gap-1 hover:underline">
                             <i class="fa-solid fa-eye text-[9px]"></i>
                             <span>Lihat</span>

@@ -112,12 +112,15 @@
         open: false,
         title: '',
         url: '',
-        fileName: '',
+        downloadUrl: '',
+        title: 'Pratinjau Dokumen',
+        fileName: 'Dokumen',
         isPdf: false,
         isImage: false
     },
-    openFilePreview(url, title, fileName = '') {
+    openFilePreview(url, title, fileName = '', downloadUrl = '') {
         this.filePreviewModal.url = url || '';
+        this.filePreviewModal.downloadUrl = downloadUrl || url || '';
         this.filePreviewModal.title = title || 'Pratinjau Dokumen';
         this.filePreviewModal.fileName = fileName || 'Dokumen';
 
