@@ -796,10 +796,10 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
-                                @forelse($employee->salaryHistories()->orderBy('effective_date', 'asc')->get() as $idx => $sh)
+                                @forelse($employee->salaryHistories()->orderBy('start_date', 'asc')->get() as $idx => $sh)
                                 <tr class="{{ $sh->is_current ? 'bg-teal-50/40 font-semibold' : '' }}">
                                     <td class="py-2 px-3 text-slate-700 whitespace-nowrap">
-                                        {{ $sh->effective_date ? $sh->effective_date->format('d/m/Y') : '-' }} &rarr;
+                                        {{ $sh->start_date ? $sh->start_date->format('d/m/Y') : '-' }} &rarr;
                                         {{ $sh->end_date ? $sh->end_date->format('d/m/Y') : 'Sekarang' }}
                                     </td>
                                     <td class="py-2 px-3 text-center font-bold text-brand-navy">{{ $sh->line_grade ?? '-' }}</td>

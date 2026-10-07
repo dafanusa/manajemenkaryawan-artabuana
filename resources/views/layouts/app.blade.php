@@ -157,7 +157,7 @@
                 <a href="{{ route('dashboard') }}" class="flex items-center gap-3 overflow-hidden">
                     <img src="{{ asset('images/logo-icon.png') }}" alt="ABP Logo" class="h-11 w-11 object-contain flex-shrink-0 bg-white p-1 rounded-xl shadow-md">
                     <div x-show="!sidebarCollapsed" x-transition.opacity.duration.200ms class="flex flex-col leading-tight">
-                        <span class="font-bold text-base tracking-wide text-white">ABP SYSTEM</span>
+                        <span class="font-bold text-base tracking-wide text-white">HRD SYSTEM</span>
                         <span class="text-[10px] tracking-wider text-teal-300 uppercase font-semibold">PT Artha Buana Primacoral</span>
                     </div>
                 </a>
