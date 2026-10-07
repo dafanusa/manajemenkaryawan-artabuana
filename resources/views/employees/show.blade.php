@@ -136,7 +136,7 @@
                     @if($doc)
                     <div class="flex items-center gap-1.5 mt-1">
                         <button type="button"
-                                @click="openFilePreview('{{ $doc->url }}', '{{ $docLabel }}', '{{ strtolower(pathinfo($doc->file_path, PATHINFO_EXTENSION)) }}')"
+                                @click="openFilePreview('{{ $doc->url }}', '{{ $docLabel }}', '{{ $doc->original_name ?? basename($doc->file_path) }}')"
                                 class="text-[10px] text-teal-700 hover:text-teal-900 font-bold flex items-center gap-1 hover:underline">
                             <i class="fa-solid fa-eye text-[9px]"></i>
                             <span>Lihat</span>
@@ -338,7 +338,7 @@
                         <td class="py-2 px-3 text-center">
                             @if($edu->document_path)
                             <button type="button"
-                                    @click="openFilePreview('{{ asset('storage/' . $edu->document_path) }}', 'Ijazah - {{ $edu->institution_name }}', '{{ strtolower(pathinfo($edu->document_path, PATHINFO_EXTENSION)) }}')"
+                                    @click="openFilePreview('{{ asset('storage/' . $edu->document_path) }}', 'Ijazah - {{ $edu->institution_name }}', '{{ $educationDoc?->original_name ?? basename($edu->document_path) }}')"
                                     class="text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
                                 <i class="fa-solid fa-eye text-[10px]"></i>
                                 <span>Lihat</span>
@@ -383,7 +383,7 @@
                         <td class="py-2 px-3 text-center">
                             @if($exp->document_path)
                             <button type="button"
-                                    @click="openFilePreview('{{ asset('storage/' . $exp->document_path) }}', 'Surat Pengalaman - {{ $exp->company_name }}', '{{ strtolower(pathinfo($exp->document_path, PATHINFO_EXTENSION)) }}')"
+                                    @click="openFilePreview('{{ asset('storage/' . $exp->document_path) }}', 'Surat Pengalaman - {{ $exp->company_name }}', '{{ $experienceDoc?->original_name ?? basename($exp->document_path) }}')"
                                     class="text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
                                 <i class="fa-solid fa-eye text-[10px]"></i>
                                 <span>Lihat</span>
@@ -465,7 +465,7 @@
                             <td class="py-2 px-3 text-center">
                                 @if($cert->document_path)
                                 <button type="button"
-                                        @click="openFilePreview('{{ asset('storage/' . $cert->document_path) }}', 'Sertifikat - {{ $cert->certificate_name }}', '{{ strtolower(pathinfo($cert->document_path, PATHINFO_EXTENSION)) }}')"
+                                        @click="openFilePreview('{{ asset('storage/' . $cert->document_path) }}', 'Sertifikat - {{ $cert->certificate_name }}', '{{ $certificateDoc?->original_name ?? basename($cert->document_path) }}')"
                                         class="text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
                                     <i class="fa-solid fa-eye text-[10px]"></i>
                                     <span>Lihat</span>
@@ -561,7 +561,7 @@
                                     @if($lic->document_path)
                                     <div class="inline-flex items-center gap-1.5">
                                         <button type="button"
-                                                @click="openFilePreview('{{ asset('storage/' . $lic->document_path) }}', 'SIM/License - {{ $lic->license_type }}', '{{ strtolower(pathinfo($lic->document_path, PATHINFO_EXTENSION)) }}')"
+                                                @click="openFilePreview('{{ asset('storage/' . $lic->document_path) }}', 'SIM/License - {{ $lic->license_type }}', '{{ $licenseDoc?->original_name ?? basename($lic->document_path) }}')"
                                                 class="text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
                                             <i class="fa-solid fa-eye text-[10px]"></i>
                                             <span>Lihat</span>
@@ -684,7 +684,7 @@
                                     @if($cnt->document_path)
                                     <div class="inline-flex items-center gap-1.5">
                                         <button type="button"
-                                                @click="openFilePreview('{{ asset('storage/' . $cnt->document_path) }}', 'Kontrak {{ $cnt->contract_sequence }} - {{ $cnt->contract_number }}', '{{ strtolower(pathinfo($cnt->document_path, PATHINFO_EXTENSION)) }}')"
+                                                @click="openFilePreview('{{ asset('storage/' . $cnt->document_path) }}', 'Kontrak {{ $cnt->contract_sequence }} - {{ $cnt->contract_number }}', '{{ $contractDoc?->original_name ?? basename($cnt->document_path) }}')"
                                                 class="text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
                                             <i class="fa-solid fa-eye text-[10px]"></i>
                                             <span>Lihat</span>
@@ -884,7 +884,7 @@
                                     @if($leave->document_path)
                                     <div class="inline-flex items-center gap-1.5">
                                         <button type="button"
-                                                @click="openFilePreview('{{ asset('storage/' . $leave->document_path) }}', 'Dokumen Cuti - {{ $leave->airline }}', '{{ strtolower(pathinfo($leave->document_path, PATHINFO_EXTENSION)) }}')"
+                                                @click="openFilePreview('{{ asset('storage/' . $leave->document_path) }}', 'Dokumen Cuti - {{ $leave->airline }}', '{{ $leaveDoc?->original_name ?? basename($leave->document_path) }}')"
                                                 class="text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
                                             <i class="fa-solid fa-eye text-[10px]"></i>
                                             <span>Lihat</span>
