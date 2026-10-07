@@ -478,212 +478,260 @@
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    function createDashboardChart(canvasId, config) {
+        const canvas = document.getElementById(canvasId);
+
+        if (!canvas) {
+            return;
+        }
+
+        // Jika chart sebelumnya sudah ada pada canvas,
+        // hancurkan terlebih dahulu agar aman jika script dijalankan ulang.
+        const existingChart = Chart.getChart(canvas);
+
+        if (existingChart) {
+            existingChart.destroy();
+        }
+
+        new Chart(canvas, config);
+    }
+
+    function initDashboardCharts() {
 
         // Brand palette colors
         const primaryTeal = '#096256';
-        const primaryLight = '#14b8a6';
         const navyColor = '#2A3956';
-        const navyLight = '#475569';
-        const grayColor = '#cbd5e1';
 
-        // 1. Chart Papua vs Non Papua (Donut)
-        const ctxPapua = document.getElementById('chartPapua');
-        if (ctxPapua) {
-            new Chart(ctxPapua, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Papua', 'Non Papua'],
-                    datasets: [{
-                        data: [{{ $papuaEmployees }}, {{ $nonPapuaEmployees }}],
-                        backgroundColor: [primaryTeal, navyColor],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
+        // 1. Chart Papua vs Non Papua
+        createDashboardChart('chartPapua', {
+            type: 'doughnut',
+            data: {
+                labels: ['Papua', 'Non Papua'],
+                datasets: [{
+                    data: [
+                        {{ $papuaEmployees }},
+                        {{ $nonPapuaEmployees }}
+                    ],
+                    backgroundColor: [primaryTeal, navyColor],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    cutout: '72%'
-                }
-            });
-        }
+                cutout: '72%'
+            }
+        });
 
-        // 2. Chart Gender (Pie)
-        const ctxGender = document.getElementById('chartGender');
-        if (ctxGender) {
-            new Chart(ctxGender, {
-                type: 'pie',
-                data: {
-                    labels: ['Laki-laki', 'Perempuan'],
-                    datasets: [{
-                        data: [{{ $maleEmployees }}, {{ $femaleEmployees }}],
-                        backgroundColor: ['#0284c7', '#ec4899'],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
+        // 2. Chart Gender
+        createDashboardChart('chartGender', {
+            type: 'pie',
+            data: {
+                labels: ['Laki-laki', 'Perempuan'],
+                datasets: [{
+                    data: [
+                        {{ $maleEmployees }},
+                        {{ $femaleEmployees }}
+                    ],
+                    backgroundColor: ['#0284c7', '#ec4899'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
                     }
                 }
-            });
-        }
+            }
+        });
 
-        // 3. Chart Location (Highland vs Lowland)
-        const ctxLocation = document.getElementById('chartLocation');
-        if (ctxLocation) {
-            new Chart(ctxLocation, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Highland', 'Lowland'],
-                    datasets: [{
-                        data: [{{ $highlandEmployees }}, {{ $lowlandEmployees }}],
-                        backgroundColor: ['#059669', '#3b82f6'],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
+        // 3. Chart Location
+        createDashboardChart('chartLocation', {
+            type: 'doughnut',
+            data: {
+                labels: ['Highland', 'Lowland'],
+                datasets: [{
+                    data: [
+                        {{ $highlandEmployees }},
+                        {{ $lowlandEmployees }}
+                    ],
+                    backgroundColor: ['#059669', '#3b82f6'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    cutout: '72%'
-                }
-            });
-        }
+                cutout: '72%'
+            }
+        });
 
-        // 4. Chart Status (Aktif vs Tidak Aktif)
-        const ctxStatus = document.getElementById('chartStatus');
-        if (ctxStatus) {
-            new Chart(ctxStatus, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Aktif', 'Tidak Aktif'],
-                    datasets: [{
-                        data: [{{ $activeEmployees }}, {{ $inactiveEmployees }}],
-                        backgroundColor: ['#10b981', '#f43f5e'],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
+        // 4. Chart Status
+        createDashboardChart('chartStatus', {
+            type: 'doughnut',
+            data: {
+                labels: ['Aktif', 'Tidak Aktif'],
+                datasets: [{
+                    data: [
+                        {{ $activeEmployees }},
+                        {{ $inactiveEmployees }}
+                    ],
+                    backgroundColor: ['#10b981', '#f43f5e'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    cutout: '72%'
-                }
-            });
-        }
+                cutout: '72%'
+            }
+        });
 
-        // 5. Chart Department (Bar)
-        const ctxDept = document.getElementById('chartDepartment');
-        if (ctxDept) {
-            new Chart(ctxDept, {
-                type: 'bar',
-                data: {
-                    labels: {!! json_encode($departmentData->pluck('department')) !!},
-                    datasets: [{
-                        label: 'Jumlah Karyawan',
-                        data: {!! json_encode($departmentData->pluck('count')) !!},
-                        backgroundColor: primaryTeal,
-                        borderRadius: 8,
-                    }]
+        // 5. Chart Department
+        createDashboardChart('chartDepartment', {
+            type: 'bar',
+            data: {
+                labels: {!! json_encode($departmentData->pluck('department')) !!},
+                datasets: [{
+                    label: 'Jumlah Karyawan',
+                    data: {!! json_encode($departmentData->pluck('count')) !!},
+                    backgroundColor: primaryTeal,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: {
+                        display: false
+                    }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y',
-                    plugins: {
-                        legend: { display: false }
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
                     },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            ticks: { precision: 0 }
-                        },
-                        y: {
-                            ticks: { font: { size: 10 } }
+                    y: {
+                        ticks: {
+                            font: {
+                                size: 10
+                            }
                         }
                     }
                 }
-            });
-        }
+            }
+        });
 
-        // 6. Chart Religion (Bar)
-        const ctxRel = document.getElementById('chartReligion');
-        if (ctxRel) {
-            new Chart(ctxRel, {
-                type: 'bar',
-                data: {
-                    labels: {!! json_encode($religionData->pluck('religion')) !!},
-                    datasets: [{
-                        label: 'Karyawan',
-                        data: {!! json_encode($religionData->pluck('count')) !!},
-                        backgroundColor: ['#096256', '#2A3956', '#0284c7', '#f59e0b', '#8b5cf6', '#64748b'],
-                        borderRadius: 8,
-                    }]
+        // 6. Chart Religion
+        createDashboardChart('chartReligion', {
+            type: 'bar',
+            data: {
+                labels: {!! json_encode($religionData->pluck('religion')) !!},
+                datasets: [{
+                    label: 'Karyawan',
+                    data: {!! json_encode($religionData->pluck('count')) !!},
+                    backgroundColor: [
+                        '#096256',
+                        '#2A3956',
+                        '#0284c7',
+                        '#f59e0b',
+                        '#8b5cf6',
+                        '#64748b'
+                    ],
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { precision: 0 }
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
                         }
                     }
                 }
-            });
-        }
+            }
+        });
 
-        // 7. Chart Position (Bar)
-        const ctxPos = document.getElementById('chartPosition');
-        if (ctxPos) {
-            new Chart(ctxPos, {
-                type: 'bar',
-                data: {
-                    labels: {!! json_encode($positionData->pluck('position')) !!},
-                    datasets: [{
-                        label: 'Personel',
-                        data: {!! json_encode($positionData->pluck('count')) !!},
-                        backgroundColor: '#2A3956',
-                        borderRadius: 8,
-                    }]
+        // 7. Chart Position
+        createDashboardChart('chartPosition', {
+            type: 'bar',
+            data: {
+                labels: {!! json_encode($positionData->pluck('position')) !!},
+                datasets: [{
+                    label: 'Personel',
+                    data: {!! json_encode($positionData->pluck('count')) !!},
+                    backgroundColor: '#2A3956',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: {
+                        display: false
+                    }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y',
-                    plugins: {
-                        legend: { display: false }
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
                     },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            ticks: { precision: 0 }
-                        },
-                        y: {
-                            ticks: { font: { size: 10 } }
+                    y: {
+                        ticks: {
+                            font: {
+                                size: 10
+                            }
                         }
                     }
                 }
-            });
-        }
+            }
+        });
+    }
 
-    });
+    // Jalankan dengan aman baik ketika DOM masih loading
+    // maupun ketika DOM sudah selesai.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDashboardCharts);
+    } else {
+        initDashboardCharts();
+    }
 </script>
 @endpush
