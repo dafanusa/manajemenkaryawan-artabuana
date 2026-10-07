@@ -116,13 +116,20 @@
         isPdf: false,
         isImage: false
     },
-    openFilePreview(title, url, fileName = '') {
+    openFilePreview(url, title, fileName = '') {
+        this.filePreviewModal.url = url || '';
         this.filePreviewModal.title = title || 'Pratinjau Dokumen';
-        this.filePreviewModal.url = url;
         this.filePreviewModal.fileName = fileName || 'Dokumen';
-        const lower = url.toLowerCase();
-        this.filePreviewModal.isPdf = lower.includes('.pdf') || lower.endsWith('pdf');
-        this.filePreviewModal.isImage = lower.match(/\.(jpg|jpeg|png|webp|gif)($|\?)/i) !== null || (!this.filePreviewModal.isPdf && url.startsWith('blob:'));
+
+        const lower = (url || '').toLowerCase();
+
+        this.filePreviewModal.isPdf =
+            lower.includes('.pdf') ||
+            lower.endsWith('pdf');
+
+        this.filePreviewModal.isImage =
+            /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(lower);
+
         this.filePreviewModal.open = true;
     }
 }" class="min-h-screen flex flex-col antialiased">
