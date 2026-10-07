@@ -3,6 +3,7 @@
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\UserManagementController;
@@ -30,6 +31,14 @@ Route::middleware('auth')->group(function () {
     // Export Employee Data (Place before resource routes)
     Route::get('/employees/export', [EmployeeController::class, 'export'])->name('employees.export');
 
+    // Departments Management
+    Route::get('/departments', [DepartmentController::class, 'index'])->name('departments.index');
+    Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
+    Route::put('/departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
+    Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])
+        ->middleware('role:super_admin')
+        ->name('departments.destroy');
+
     // Employees CRUD
     Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
     Route::get('/employees/create', [EmployeeController::class, 'create'])->name('employees.create');
@@ -45,8 +54,15 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:super_admin')
         ->name('employees.destroy');
 
+    // Document download with auth checks
+    Route::get('/documents/{document}/download', [EmployeeController::class, 'downloadDocument'])->name('documents.download');
+
     // Super Admin Routes
     Route::middleware('role:super_admin')->group(function () {
+        // Salary History dedicated management
+        Route::post('/employees/{employee}/salary-histories', [EmployeeController::class, 'storeSalaryHistory'])->name('employees.salary_histories.store');
+        Route::delete('/salary-histories/{history}', [EmployeeController::class, 'destroySalaryHistory'])->name('employees.salary_histories.destroy');
+
         // User Management
         Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
         Route::post('/users', [UserManagementController::class, 'store'])->name('users.store');

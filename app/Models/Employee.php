@@ -4,7 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Employee extends Model
 {
@@ -22,6 +24,41 @@ class Employee extends Model
             'basic_salary' => 'decimal:2',
             'hourly_rate' => 'decimal:2',
         ];
+    }
+
+    public function departmentRelation(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'department_id');
+    }
+
+    public function salaryHistories(): HasMany
+    {
+        return $this->hasMany(EmployeeSalaryHistory::class)->orderByDesc('id');
+    }
+
+    public function currentSalaryHistory(): HasOne
+    {
+        return $this->hasOne(EmployeeSalaryHistory::class)->where('is_current', true);
+    }
+
+    public function leaves(): HasMany
+    {
+        return $this->hasMany(EmployeeLeave::class)->orderByDesc('leave_start_date');
+    }
+
+    public function skills(): HasMany
+    {
+        return $this->hasMany(EmployeeSkill::class);
+    }
+
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(EmployeeContract::class)->orderBy('contract_sequence');
+    }
+
+    public function licenses(): HasMany
+    {
+        return $this->hasMany(EmployeeLicense::class);
     }
 
     public function emergencyContacts(): HasMany

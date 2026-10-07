@@ -107,6 +107,23 @@
         this.confirmModal.confirmText = confirmText;
         this.confirmModal.danger = danger;
         this.confirmModal.open = true;
+    },
+    filePreviewModal: {
+        open: false,
+        title: '',
+        url: '',
+        fileName: '',
+        isPdf: false,
+        isImage: false
+    },
+    openFilePreview(title, url, fileName = '') {
+        this.filePreviewModal.title = title || 'Pratinjau Dokumen';
+        this.filePreviewModal.url = url;
+        this.filePreviewModal.fileName = fileName || 'Dokumen';
+        const lower = url.toLowerCase();
+        this.filePreviewModal.isPdf = lower.includes('.pdf') || lower.endsWith('pdf');
+        this.filePreviewModal.isImage = lower.match(/\.(jpg|jpeg|png|webp|gif)($|\?)/i) !== null || (!this.filePreviewModal.isPdf && url.startsWith('blob:'));
+        this.filePreviewModal.open = true;
     }
 }" class="min-h-screen flex flex-col antialiased">
 
@@ -205,6 +222,14 @@
                    :title="sidebarCollapsed ? 'Input Data Karyawan' : ''">
                     <i class="fa-solid fa-user-plus w-5 text-center text-lg {{ request()->routeIs('employees.create') ? 'text-teal-200' : 'text-slate-400' }}"></i>
                     <span x-show="!sidebarCollapsed" class="truncate">Input Karyawan</span>
+                </a>
+
+                <!-- Master Departemen -->
+                <a href="{{ route('departments.index') }}"
+                   class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('departments.*') ? 'bg-brand-primary text-white shadow-lg font-semibold' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}"
+                   :title="sidebarCollapsed ? 'Master Departemen' : ''">
+                    <i class="fa-solid fa-building-user w-5 text-center text-lg {{ request()->routeIs('departments.*') ? 'text-teal-200' : 'text-slate-400' }}"></i>
+                    <span x-show="!sidebarCollapsed" class="truncate">Master Departemen</span>
                 </a>
 
                 @if(Auth::user()->isSuperAdmin())
@@ -448,6 +473,87 @@
                 <button type="submit" :class="confirmModal.danger ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-brand-primary hover:bg-brand-primary-hover text-white'" class="px-5 py-2.5 rounded-xl text-xs font-bold shadow-md transition" x-text="confirmModal.confirmText">
                 </button>
             </form>
+
+        </div>
+    </div>
+
+    <!-- REUSABLE FILE PREVIEW MODAL -->
+    <div x-show="filePreviewModal.open"
+         x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/75 backdrop-blur-sm"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+
+        <div @click.away="filePreviewModal.open = false"
+             class="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden transform transition-all"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="scale-95 opacity-0"
+             x-transition:enter-end="scale-100 opacity-100">
+
+            <!-- Modal Header -->
+            <div class="px-5 py-4 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between flex-shrink-0">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <div class="w-9 h-9 rounded-xl bg-brand-primary text-white flex items-center justify-center text-sm flex-shrink-0">
+                        <i :class="filePreviewModal.isPdf ? 'fa-solid fa-file-pdf' : 'fa-solid fa-file-image'"></i>
+                    </div>
+                    <div class="truncate">
+                        <h3 class="text-sm font-bold text-brand-navy truncate" x-text="filePreviewModal.title"></h3>
+                        <p class="text-[11px] text-slate-400 font-mono truncate" x-text="filePreviewModal.fileName"></p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <a :href="filePreviewModal.url"
+                       target="_blank"
+                       class="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition inline-flex items-center gap-1.5"
+                       title="Buka di tab baru">
+                        <span>Tab Baru</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                    </a>
+
+                    <a :href="filePreviewModal.url"
+                       :download="filePreviewModal.fileName"
+                       class="px-3.5 py-1.5 bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-bold rounded-xl shadow transition inline-flex items-center gap-1.5"
+                       title="Download file">
+                        <i class="fa-solid fa-download text-xs"></i>
+                        <span>Download</span>
+                    </a>
+
+                    <button type="button" @click="filePreviewModal.open = false" class="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Content (Preview Body) -->
+            <div class="flex-1 overflow-auto p-4 sm:p-6 bg-slate-100/60 flex items-center justify-center min-h-[300px] max-h-[78vh]">
+                <template x-if="filePreviewModal.isPdf">
+                    <iframe :src="filePreviewModal.url" class="w-full h-[70vh] rounded-2xl border border-slate-200 shadow-inner bg-white"></iframe>
+                </template>
+
+                <template x-if="filePreviewModal.isImage">
+                    <div class="flex flex-col items-center justify-center max-h-full">
+                        <img :src="filePreviewModal.url" :alt="filePreviewModal.title" class="max-h-[70vh] max-w-full object-contain rounded-2xl shadow-md border border-slate-200 bg-white">
+                    </div>
+                </template>
+
+                <template x-if="!filePreviewModal.isPdf && !filePreviewModal.isImage">
+                    <div class="text-center p-8 bg-white rounded-2xl border border-slate-200 max-w-sm">
+                        <div class="w-16 h-16 rounded-2xl bg-teal-50 text-brand-primary mx-auto flex items-center justify-center text-2xl mb-3">
+                            <i class="fa-solid fa-file"></i>
+                        </div>
+                        <h4 class="font-bold text-sm text-brand-navy mb-1" x-text="filePreviewModal.fileName"></h4>
+                        <p class="text-xs text-slate-400 mb-4">Format dokumen ini tidak mendukung pratinjau langsung di dalam browser.</p>
+                        <a :href="filePreviewModal.url" target="_blank" class="px-4 py-2 bg-brand-primary text-white rounded-xl font-bold text-xs shadow hover:bg-brand-primary-hover inline-flex items-center gap-1.5">
+                            <i class="fa-solid fa-download"></i> Unduh / Buka Dokumen
+                        </a>
+                    </div>
+                </template>
+            </div>
 
         </div>
     </div>

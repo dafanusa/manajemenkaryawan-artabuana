@@ -102,7 +102,7 @@
             @endif
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 text-xs">
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2.5 text-xs">
             @php
                 $checkList = [
                     'photo' => 'Pas Foto 3x4',
@@ -113,11 +113,13 @@
                     'bpjs_kes' => 'BPJS Kesehatan',
                     'bpjs_tk' => 'BPJS TK',
                     'bank_book' => 'Buku Rekening',
-                    'salary_slip' => 'Slip Gaji',
-                    'leave_form' => 'Form Cuti/Tiket',
-                    'employee_signature' => 'TTD Karyawan',
-                    'hrd_signature' => 'TTD HRD',
                 ];
+                if (Auth::user()->isSuperAdmin()) {
+                    $checkList['salary_slip'] = 'Slip Gaji';
+                }
+                $checkList['leave_form'] = 'Form Cuti/Tiket';
+                $checkList['employee_signature'] = 'TTD Karyawan';
+                $checkList['hrd_signature'] = 'TTD HRD';
             @endphp
 
             @foreach($checkList as $docKey => $docLabel)
@@ -132,12 +134,20 @@
                         @endif
                     </div>
                     @if($doc)
-                    <a href="{{ $doc->url }}" target="_blank" class="text-[10px] text-teal-700 hover:underline font-bold flex items-center gap-1">
-                        <span>Lihat File</span>
-                        <i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i>
-                    </a>
+                    <div class="flex items-center gap-1.5 mt-1">
+                        <button type="button"
+                                @click="openFilePreview('{{ $doc->url }}', '{{ $docLabel }}', '{{ strtolower(pathinfo($doc->file_path, PATHINFO_EXTENSION)) }}')"
+                                class="text-[10px] text-teal-700 hover:text-teal-900 font-bold flex items-center gap-1 hover:underline">
+                            <i class="fa-solid fa-eye text-[9px]"></i>
+                            <span>Lihat</span>
+                        </button>
+                        <span class="text-slate-300 text-[10px]">&bull;</span>
+                        <a href="{{ $doc->url }}" download class="text-[10px] text-slate-500 hover:text-slate-700 font-medium" title="Unduh File">
+                            <i class="fa-solid fa-download text-[9px]"></i>
+                        </a>
+                    </div>
                     @else
-                    <span class="text-[10px] text-slate-400 italic">Belum ada</span>
+                    <span class="text-[10px] text-slate-400 italic block mt-1">Belum ada</span>
                     @endif
                 </div>
             @endforeach
@@ -184,9 +194,15 @@
             <div class="flex flex-col md:flex-row gap-6 items-start">
 
                 <!-- Pas Foto 3x4 -->
-                <div class="w-32 h-44 rounded-xl border border-slate-300 overflow-hidden flex-shrink-0 bg-slate-100 flex items-center justify-center shadow-sm relative">
+                <div class="w-32 h-44 rounded-xl border border-slate-300 overflow-hidden flex-shrink-0 bg-slate-100 flex items-center justify-center shadow-sm relative group">
                     @if($employee->photo)
                     <img src="{{ asset('storage/' . $employee->photo) }}" alt="{{ $employee->full_name }}" class="w-full h-full object-cover">
+                    <button type="button"
+                            @click="openFilePreview('{{ asset('storage/' . $employee->photo) }}', 'Pas Foto - {{ $employee->full_name }}', 'jpg')"
+                            class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-bold gap-1">
+                        <i class="fa-solid fa-eye"></i>
+                        <span>Lihat</span>
+                    </button>
                     @else
                     <div class="text-center p-2 text-slate-400">
                         <i class="fa-solid fa-user text-3xl mb-1 text-slate-300"></i>
@@ -321,7 +337,12 @@
                         <td class="py-2 px-3 border-r border-slate-200">{{ $edu->certificate_number ?? '-' }}</td>
                         <td class="py-2 px-3 text-center">
                             @if($edu->document_path)
-                            <a href="{{ asset('storage/' . $edu->document_path) }}" target="_blank" class="text-teal-700 font-bold hover:underline">Lihat</a>
+                            <button type="button"
+                                    @click="openFilePreview('{{ asset('storage/' . $edu->document_path) }}', 'Ijazah - {{ $edu->institution_name }}', '{{ strtolower(pathinfo($edu->document_path, PATHINFO_EXTENSION)) }}')"
+                                    class="text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
+                                <i class="fa-solid fa-eye text-[10px]"></i>
+                                <span>Lihat</span>
+                            </button>
                             @else
                             <span class="text-slate-400">-</span>
                             @endif
@@ -361,7 +382,12 @@
                         <td class="py-2 px-3 border-r border-slate-200">{{ $exp->reason_for_leaving ?? '-' }}</td>
                         <td class="py-2 px-3 text-center">
                             @if($exp->document_path)
-                            <a href="{{ asset('storage/' . $exp->document_path) }}" target="_blank" class="text-teal-700 font-bold hover:underline">Lihat</a>
+                            <button type="button"
+                                    @click="openFilePreview('{{ asset('storage/' . $exp->document_path) }}', 'Surat Pengalaman - {{ $exp->company_name }}', '{{ strtolower(pathinfo($exp->document_path, PATHINFO_EXTENSION)) }}')"
+                                    class="text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
+                                <i class="fa-solid fa-eye text-[10px]"></i>
+                                <span>Lihat</span>
+                            </button>
                             @else
                             <span class="text-slate-400">-</span>
                             @endif
@@ -376,8 +402,8 @@
             </table>
         </div>
 
-        <!-- E. KEAHLIAN & SERTIFIKAT -->
-        <div class="space-y-3">
+        <!-- E. KEAHLIAN & SERTIFIKAT KOMPETENSI -->
+        <div class="space-y-4">
             <div class="bg-brand-navy text-white text-xs font-bold py-1.5 px-3 rounded-lg">
                 E. KEAHLIAN DAN SERTIFIKAT KOMPETENSI
             </div>
@@ -393,40 +419,73 @@
                 </div>
             </div>
 
-            @if($employee->certificates->count() > 0)
-            <table class="w-full text-left text-xs border border-slate-200 mt-2">
-                <thead class="bg-slate-50 font-bold text-slate-700 border-b border-slate-200 text-[11px]">
-                    <tr>
-                        <th class="py-2 px-3 border-r border-slate-200">Nama Sertifikat</th>
-                        <th class="py-2 px-3 border-r border-slate-200">Nomor Sertifikat</th>
-                        <th class="py-2 px-3 border-r border-slate-200 w-32">Masa Berlaku</th>
-                        <th class="py-2 px-3 text-center w-20">Dokumen</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-200">
-                    @foreach($employee->certificates as $cert)
-                    <tr>
-                        <td class="py-2 px-3 border-r border-slate-200 font-bold">{{ $cert->certificate_name }}</td>
-                        <td class="py-2 px-3 border-r border-slate-200">{{ $cert->certificate_number ?? '-' }}</td>
-                        <td class="py-2 px-3 border-r border-slate-200">{{ $cert->valid_until ?? '-' }}</td>
-                        <td class="py-2 px-3 text-center">
-                            @if($cert->document_path)
-                            <a href="{{ asset('storage/' . $cert->document_path) }}" target="_blank" class="text-teal-700 font-bold hover:underline">Lihat</a>
-                            @else
-                            <span class="text-slate-400">-</span>
+            <!-- Relational Skills (Repeater Data) -->
+            @if($employee->skills->count() > 0)
+            <div class="space-y-2 pt-1">
+                <span class="text-xs font-bold text-brand-navy block">Daftar Keahlian Spesifik Karyawan:</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                    @foreach($employee->skills as $idx => $sk)
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/70 flex flex-col justify-between">
+                        <div class="flex items-start justify-between gap-2">
+                            <span class="font-bold text-slate-800 text-xs">{{ $sk->skill_name }}</span>
+                            @if($sk->proficiency_level)
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-brand-primary border border-teal-200 whitespace-nowrap">
+                                {{ $sk->proficiency_level }}
+                            </span>
                             @endif
-                        </td>
-                    </tr>
+                        </div>
+                        @if($sk->notes)
+                        <p class="text-[11px] text-slate-500 mt-1 italic">{{ $sk->notes }}</p>
+                        @endif
+                    </div>
                     @endforeach
-                </tbody>
-            </table>
+                </div>
+            </div>
+            @endif
+
+            <!-- Certificates -->
+            @if($employee->certificates->count() > 0)
+            <div class="space-y-2 pt-1">
+                <span class="text-xs font-bold text-brand-navy block">Sertifikat Kompetensi:</span>
+                <table class="w-full text-left text-xs border border-slate-200">
+                    <thead class="bg-slate-50 font-bold text-slate-700 border-b border-slate-200 text-[11px]">
+                        <tr>
+                            <th class="py-2 px-3 border-r border-slate-200">Nama Sertifikat</th>
+                            <th class="py-2 px-3 border-r border-slate-200">Nomor Sertifikat</th>
+                            <th class="py-2 px-3 border-r border-slate-200 w-32">Masa Berlaku</th>
+                            <th class="py-2 px-3 text-center w-20">Dokumen</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        @foreach($employee->certificates as $cert)
+                        <tr>
+                            <td class="py-2 px-3 border-r border-slate-200 font-bold">{{ $cert->certificate_name }}</td>
+                            <td class="py-2 px-3 border-r border-slate-200">{{ $cert->certificate_number ?? '-' }}</td>
+                            <td class="py-2 px-3 border-r border-slate-200">{{ $cert->valid_until ?? '-' }}</td>
+                            <td class="py-2 px-3 text-center">
+                                @if($cert->document_path)
+                                <button type="button"
+                                        @click="openFilePreview('{{ asset('storage/' . $cert->document_path) }}', 'Sertifikat - {{ $cert->certificate_name }}', '{{ strtolower(pathinfo($cert->document_path, PATHINFO_EXTENSION)) }}')"
+                                        class="text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
+                                    <i class="fa-solid fa-eye text-[10px]"></i>
+                                    <span>Lihat</span>
+                                </button>
+                                @else
+                                <span class="text-slate-400">-</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
             @endif
         </div>
 
-        <!-- F. DATA ADMINISTRASI -->
-        <div class="space-y-3">
+        <!-- F. DATA ADMINISTRASI & SIM / LICENSE -->
+        <div class="space-y-4">
             <div class="bg-brand-navy text-white text-xs font-bold py-1.5 px-3 rounded-lg">
-                F. DATA ADMINISTRASI
+                F. DATA ADMINISTRASI & SURAT IZIN MENGEPENGEMUDI (SIM / LICENSE)
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2 text-xs">
@@ -459,10 +518,74 @@
                     <span class="font-medium">: {{ $employee->bank_account_holder ?? '-' }}</span>
                 </div>
             </div>
+
+            <!-- SIM / LICENSE LIST -->
+            @if($employee->licenses->count() > 0)
+            <div class="space-y-2 pt-2 border-t border-slate-100">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-brand-navy flex items-center gap-2">
+                        <i class="fa-solid fa-id-card text-brand-primary"></i>
+                        <span>Daftar SIM & License Kerja:</span>
+                    </span>
+                    <span class="text-[10px] text-slate-400">{{ $employee->licenses->count() }} Dokumen License</span>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 font-bold text-slate-700 border-b border-slate-200 text-[11px]">
+                            <tr>
+                                <th class="py-2 px-3 border-r border-slate-200">Jenis SIM / License</th>
+                                <th class="py-2 px-3 border-r border-slate-200">Nomor</th>
+                                <th class="py-2 px-3 border-r border-slate-200">Tanggal Terbit</th>
+                                <th class="py-2 px-3 border-r border-slate-200">Berlaku Sampai</th>
+                                <th class="py-2 px-3 border-r border-slate-200 text-center">Status</th>
+                                <th class="py-2 px-3 text-center w-24">Dokumen</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @foreach($employee->licenses as $lic)
+                            <tr>
+                                <td class="py-2.5 px-3 border-r border-slate-200 font-bold text-slate-800">{{ $lic->license_type }}</td>
+                                <td class="py-2.5 px-3 border-r border-slate-200 font-mono text-brand-navy">{{ $lic->license_number ?? '-' }}</td>
+                                <td class="py-2.5 px-3 border-r border-slate-200">{{ $lic->issue_date ? $lic->issue_date->format('d/m/Y') : '-' }}</td>
+                                <td class="py-2.5 px-3 border-r border-slate-200">{{ $lic->expiry_date ? $lic->expiry_date->format('d/m/Y') : '-' }}</td>
+                                <td class="py-2.5 px-3 border-r border-slate-200 text-center">
+                                    @php
+                                        $isExpired = $lic->expiry_date && $lic->expiry_date->isPast();
+                                    @endphp
+                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold {{ $isExpired ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200' }}">
+                                        {{ $isExpired ? 'Kedaluwarsa' : 'Aktif' }}
+                                    </span>
+                                </td>
+                                <td class="py-2.5 px-3 text-center">
+                                    @if($lic->document_path)
+                                    <div class="inline-flex items-center gap-1.5">
+                                        <button type="button"
+                                                @click="openFilePreview('{{ asset('storage/' . $lic->document_path) }}', 'SIM/License - {{ $lic->license_type }}', '{{ strtolower(pathinfo($lic->document_path, PATHINFO_EXTENSION)) }}')"
+                                                class="text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
+                                            <i class="fa-solid fa-eye text-[10px]"></i>
+                                            <span>Lihat</span>
+                                        </button>
+                                        <span class="text-slate-300">&bull;</span>
+                                        <a href="{{ asset('storage/' . $lic->document_path) }}" download class="text-slate-500 hover:text-slate-700">
+                                            <i class="fa-solid fa-download text-[10px]"></i>
+                                        </a>
+                                    </div>
+                                    @else
+                                    <span class="text-slate-400">-</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @endif
         </div>
 
         <!-- G. DATA KEPEGAWAIAN (DIISI HRD) -->
-        <div class="space-y-3">
+        <div class="space-y-4">
             <div class="bg-brand-navy text-white text-xs font-bold py-1.5 px-3 rounded-lg flex items-center justify-between">
                 <span>G. DATA KEPEGAWAIAN (DIISI HRD)</span>
                 <span class="text-[10px] text-teal-200">PT Artha Buana Primacoral</span>
@@ -486,6 +609,10 @@
                     <span class="font-bold {{ $employee->employment_status === 'Aktif' ? 'text-emerald-700' : 'text-rose-700' }}">: {{ $employee->employment_status }}</span>
                 </div>
                 <div class="flex border-b border-slate-100 pb-1.5">
+                    <span class="w-36 font-semibold text-slate-500 flex-shrink-0">Jenis Kontrak</span>
+                    <span class="font-bold text-indigo-700">: {{ $employee->contract_type ?? 'PKWT' }}</span>
+                </div>
+                <div class="flex border-b border-slate-100 pb-1.5">
                     <span class="w-36 font-semibold text-slate-500 flex-shrink-0">Lokasi Kerja</span>
                     <span class="font-bold text-brand-primary">: {{ $employee->work_location }}</span>
                 </div>
@@ -502,51 +629,285 @@
                     <span class="font-medium">: {{ $employee->leave_date ? $employee->leave_date->format('d F Y') : '-' }}</span>
                 </div>
             </div>
-        </div>
 
-        <!-- H. GAJI DAN CUTI TERAKHIR -->
-        <div class="space-y-3">
-            <div class="bg-brand-navy text-white text-xs font-bold py-1.5 px-3 rounded-lg">
-                H. GAJI DAN CUTI TERAKHIR
-            </div>
+            <!-- RIWAYAT KONTRAK KARYAWAN PKWT -->
+            @if($employee->contracts->count() > 0)
+            <div class="space-y-2 pt-2 border-t border-slate-100">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-brand-navy flex items-center gap-2">
+                            <i class="fa-solid fa-file-contract text-brand-primary"></i>
+                            <span>Riwayat Kontrak Karyawan (PKWT)</span>
+                        </span>
+                        <span class="text-[11px] text-slate-500">
+                            Karyawan ini telah mengalami <strong class="text-brand-primary">{{ max(0, $employee->contracts->count() - 1) }} kali perpanjangan kontrak</strong> (Total {{ $employee->contracts->count() }} kontrak)
+                        </span>
+                    </div>
+                    <span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                        Histori Lengkap
+                    </span>
+                </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs">
-                <div class="flex border-b border-slate-100 pb-1.5">
-                    <span class="w-44 font-semibold text-slate-500 flex-shrink-0">Posisi Saat Ini</span>
-                    <span class="font-medium">: {{ $employee->current_position ?? $employee->position }}</span>
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 font-bold text-slate-700 border-b border-slate-200 text-[11px]">
+                            <tr>
+                                <th class="py-2 px-3 border-r border-slate-200 w-24">Tahap Kontrak</th>
+                                <th class="py-2 px-3 border-r border-slate-200">Nomor Kontrak</th>
+                                <th class="py-2 px-3 border-r border-slate-200">Periode Kontrak</th>
+                                <th class="py-2 px-3 border-r border-slate-200">Jabatan & Dept</th>
+                                <th class="py-2 px-3 border-r border-slate-200">Lokasi / Proyek</th>
+                                <th class="py-2 px-3 border-r border-slate-200">Keterangan</th>
+                                <th class="py-2 px-3 text-center w-24">Dokumen</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @foreach($employee->contracts()->orderBy('contract_sequence', 'asc')->get() as $idx => $cnt)
+                            <tr class="{{ $loop->last ? 'bg-teal-50/30' : '' }}">
+                                <td class="py-2.5 px-3 border-r border-slate-200 font-bold text-brand-navy">
+                                    Kontrak {{ $cnt->contract_sequence ?? ($idx + 1) }}
+                                    @if($loop->last)
+                                    <span class="block text-[9px] text-emerald-700 font-semibold">(Terkini)</span>
+                                    @endif
+                                </td>
+                                <td class="py-2.5 px-3 border-r border-slate-200 font-mono text-slate-800 font-semibold">{{ $cnt->contract_number }}</td>
+                                <td class="py-2.5 px-3 border-r border-slate-200 whitespace-nowrap">
+                                    {{ $cnt->start_date ? $cnt->start_date->format('d/m/Y') : '-' }} s/d {{ $cnt->end_date ? $cnt->end_date->format('d/m/Y') : '-' }}
+                                </td>
+                                <td class="py-2.5 px-3 border-r border-slate-200">
+                                    <span class="font-semibold block">{{ $cnt->position }}</span>
+                                    <span class="text-[10px] text-slate-400">{{ $cnt->department }}</span>
+                                </td>
+                                <td class="py-2.5 px-3 border-r border-slate-200 text-slate-600">{{ $cnt->project_location ?? '-' }}</td>
+                                <td class="py-2.5 px-3 border-r border-slate-200 text-slate-500">{{ $cnt->notes ?? '-' }}</td>
+                                <td class="py-2.5 px-3 text-center">
+                                    @if($cnt->document_path)
+                                    <div class="inline-flex items-center gap-1.5">
+                                        <button type="button"
+                                                @click="openFilePreview('{{ asset('storage/' . $cnt->document_path) }}', 'Kontrak {{ $cnt->contract_sequence }} - {{ $cnt->contract_number }}', '{{ strtolower(pathinfo($cnt->document_path, PATHINFO_EXTENSION)) }}')"
+                                                class="text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
+                                            <i class="fa-solid fa-eye text-[10px]"></i>
+                                            <span>Lihat</span>
+                                        </button>
+                                        <span class="text-slate-300">&bull;</span>
+                                        <a href="{{ asset('storage/' . $cnt->document_path) }}" download class="text-slate-500 hover:text-slate-700">
+                                            <i class="fa-solid fa-download text-[10px]"></i>
+                                        </a>
+                                    </div>
+                                    @else
+                                    <span class="text-slate-400">-</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
-                <div class="flex border-b border-slate-100 pb-1.5">
-                    <span class="w-44 font-semibold text-slate-500 flex-shrink-0">Lama Kerja Sebelumnya</span>
-                    <span class="font-medium">: {{ $employee->previous_work_years }} Tahun, {{ $employee->previous_work_months }} Bulan</span>
-                </div>
-                <div class="flex border-b border-slate-100 pb-1.5">
-                    <span class="w-44 font-semibold text-slate-500 flex-shrink-0">Gaji Pokok *)</span>
-                    <span class="font-bold text-brand-navy font-mono">: Rp {{ number_format($employee->basic_salary, 0, ',', '.') }}</span>
-                </div>
-                <div class="flex border-b border-slate-100 pb-1.5">
-                    <span class="w-44 font-semibold text-slate-500 flex-shrink-0">Gaji Per Jam</span>
-                    <span class="font-medium font-mono">: Rp {{ number_format($employee->hourly_rate, 0, ',', '.') }}</span>
-                </div>
-                <div class="sm:col-span-2 flex border-b border-slate-100 pb-1.5">
-                    <span class="w-44 font-semibold text-slate-500 flex-shrink-0">Cuti Terakhir ***)</span>
-                    <span class="font-medium">: {{ $employee->last_leave_date ? $employee->last_leave_date->format('d F Y') : '-' }}</span>
-                </div>
-            </div>
-
-            <!-- Tunjangan List -->
-            @if($employee->allowances->count() > 0)
-            <div class="pt-1">
-                <span class="text-[11px] font-bold text-slate-500 block mb-1">Tunjangan Lainnya **):</span>
-                <ul class="list-disc list-inside text-xs text-slate-700 space-y-0.5">
-                    @foreach($employee->allowances as $alw)
-                    <li>
-                        <strong>{{ $alw->allowance_name }}</strong>: Rp {{ number_format($alw->amount, 0, ',', '.') }}
-                        @if($alw->notes)<span class="text-slate-400">({{ $alw->notes }})</span>@endif
-                    </li>
-                    @endforeach
-                </ul>
             </div>
             @endif
+        </div>
+
+        <!-- H. GAJI DAN CUTI KARYAWAN -->
+        <div class="space-y-4">
+            <div class="bg-brand-navy text-white text-xs font-bold py-1.5 px-3 rounded-lg flex items-center justify-between">
+                <span>H. GAJI DAN CUTI KARYAWAN</span>
+                <span class="text-[10px] text-teal-200">Informasi Finansial & Kehadiran</span>
+            </div>
+
+            <!-- GAJI SECTION (HAK AKSES SUPER ADMIN ONLY) -->
+            @if(Auth::user()->isSuperAdmin())
+            <div class="space-y-4 p-4 rounded-2xl bg-teal-50/40 border border-teal-200">
+                <div class="flex items-center justify-between border-b border-teal-100 pb-2">
+                    <span class="text-xs font-bold text-brand-navy uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-money-bill-wave text-brand-primary"></i>
+                        <span>Data Gaji Karyawan (Super Admin)</span>
+                    </span>
+                    <span class="text-[10px] font-bold text-teal-800 bg-teal-100/70 px-2.5 py-0.5 rounded-full border border-teal-200">
+                        Sensitif / Confidential
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                    <div class="p-3 bg-white rounded-xl border border-teal-100 shadow-sm">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase block">Line Grade</span>
+                        <span class="text-base font-extrabold text-brand-navy">{{ $employee->line_grade ?? '-' }}</span>
+                    </div>
+                    <div class="p-3 bg-white rounded-xl border border-teal-100 shadow-sm">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase block">Salary Level</span>
+                        <span class="text-base font-extrabold text-brand-navy">{{ $employee->salary_level ?? '-' }}</span>
+                    </div>
+                    <div class="p-3 bg-white rounded-xl border border-teal-100 shadow-sm">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase block">Gaji Pokok</span>
+                        <span class="text-base font-extrabold text-brand-navy font-mono">Rp {{ number_format($employee->basic_salary, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="p-3 bg-white rounded-xl border border-teal-100 shadow-sm">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase block">Gaji Per Jam</span>
+                        <span class="text-base font-extrabold text-brand-navy font-mono">Rp {{ number_format($employee->hourly_rate, 0, ',', '.') }}</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div class="flex border-b border-slate-100 pb-1.5">
+                        <span class="w-44 font-semibold text-slate-500 flex-shrink-0">Posisi Saat Ini</span>
+                        <span class="font-medium">: {{ $employee->current_position ?? $employee->position }}</span>
+                    </div>
+                    <div class="flex border-b border-slate-100 pb-1.5">
+                        <span class="w-44 font-semibold text-slate-500 flex-shrink-0">Lama Kerja Sebelumnya</span>
+                        <span class="font-medium">: {{ $employee->previous_work_years }} Tahun, {{ $employee->previous_work_months }} Bulan</span>
+                    </div>
+                </div>
+
+                <!-- Tunjangan List -->
+                @if($employee->allowances->count() > 0)
+                <div class="p-3.5 bg-white rounded-xl border border-teal-100 space-y-1.5">
+                    <span class="text-[11px] font-bold text-slate-700 block">Tunjangan Lainnya:</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        @foreach($employee->allowances as $alw)
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-1">
+                            <span class="text-slate-700 font-medium">{{ $alw->allowance_name }} @if($alw->notes)<span class="text-slate-400 text-[11px]">({{ $alw->notes }})</span>@endif</span>
+                            <span class="font-bold text-brand-navy font-mono">Rp {{ number_format($alw->amount, 0, ',', '.') }}</span>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                <!-- HISTORI PERUBAHAN GAJI (Gaji Awal -> Gaji Akhir) -->
+                <div class="space-y-2 pt-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-brand-navy flex items-center gap-1.5">
+                            <i class="fa-solid fa-clock-rotate-left text-brand-primary"></i>
+                            <span>Histori Penyesuaian Gaji (Gaji Awal &rarr; Gaji Akhir):</span>
+                        </span>
+                        <span class="text-[10px] text-slate-400">{{ $employee->salaryHistories->count() }} Data Histori</span>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 font-bold text-slate-600 border-b border-slate-200 text-[11px]">
+                                <tr>
+                                    <th class="py-2.5 px-3">Periode</th>
+                                    <th class="py-2.5 px-3 text-center">Grade</th>
+                                    <th class="py-2.5 px-3 text-center">Level</th>
+                                    <th class="py-2.5 px-3 text-right">Gaji Pokok</th>
+                                    <th class="py-2.5 px-3 text-right">Gaji/Jam</th>
+                                    <th class="py-2.5 px-3">Tunjangan</th>
+                                    <th class="py-2.5 px-3">Keterangan / Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @forelse($employee->salaryHistories()->orderBy('effective_date', 'asc')->get() as $idx => $sh)
+                                <tr class="{{ $sh->is_current ? 'bg-teal-50/40 font-semibold' : '' }}">
+                                    <td class="py-2 px-3 text-slate-700 whitespace-nowrap">
+                                        {{ $sh->effective_date ? $sh->effective_date->format('d/m/Y') : '-' }} &rarr;
+                                        {{ $sh->end_date ? $sh->end_date->format('d/m/Y') : 'Sekarang' }}
+                                    </td>
+                                    <td class="py-2 px-3 text-center font-bold text-brand-navy">{{ $sh->line_grade ?? '-' }}</td>
+                                    <td class="py-2 px-3 text-center font-bold text-brand-navy">{{ $sh->salary_level ?? '-' }}</td>
+                                    <td class="py-2 px-3 text-right font-mono font-bold text-brand-navy">Rp {{ number_format($sh->basic_salary, 0, ',', '.') }}</td>
+                                    <td class="py-2 px-3 text-right font-mono">Rp {{ number_format($sh->hourly_rate, 0, ',', '.') }}</td>
+                                    <td class="py-2 px-3 text-xs">
+                                        @if(!empty($sh->allowances_detail))
+                                            @foreach($sh->allowances_detail as $ad)
+                                                <div>{{ $ad['allowance_name'] ?? 'Tunjangan' }}: Rp {{ number_format($ad['amount'] ?? 0, 0, ',', '.') }}</div>
+                                            @endforeach
+                                        @else
+                                            <span class="text-slate-400">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-2 px-3">
+                                        @if($sh->is_current)
+                                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                            Gaji Aktif
+                                        </span>
+                                        @endif
+                                        <span class="text-[11px] text-slate-500 block">{{ $sh->notes ?? ($idx === 0 ? 'Gaji Awal Masuk' : 'Penyesuaian Gaji') }}</span>
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="7" class="py-3 text-center text-slate-400 text-xs">Belum ada histori perubahan gaji.</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            @else
+            <!-- ADMIN HRD NOTICE (GAJI DISEMBUNYIKAN SECARA TOTAL) -->
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-3 text-xs text-slate-500">
+                <i class="fa-solid fa-lock text-amber-600 text-base"></i>
+                <div>
+                    <span class="font-bold text-slate-700 block">Informasi Finansial Terlindungi</span>
+                    <span>Data gaji dan histori penyesuaian gaji karyawan bersifat rahasia (Confidential) dan hanya dapat diakses oleh Super Admin.</span>
+                </div>
+            </div>
+            @endif
+
+            <!-- DATA & RIWAYAT CUTI KARYAWAN (BISA DIAKSES KEDUA ROLE) -->
+            <div class="space-y-3 pt-2">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-brand-navy flex items-center gap-2">
+                            <i class="fa-solid fa-plane-departure text-brand-primary"></i>
+                            <span>Riwayat Cuti Karyawan</span>
+                        </span>
+                        <span class="text-[11px] text-slate-500">Cuti Terakhir: <strong>{{ $employee->last_leave_date ? $employee->last_leave_date->format('d F Y') : '-' }}</strong></span>
+                    </div>
+                    <span class="text-[10px] text-slate-400">{{ $employee->leaves->count() }} Data Cuti Tercatat</span>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 font-bold text-slate-600 border-b border-slate-200 text-[11px]">
+                            <tr>
+                                <th class="py-2.5 px-3 w-20">Cuti Ke-</th>
+                                <th class="py-2.5 px-3">Tanggal Berangkat</th>
+                                <th class="py-2.5 px-3">Tanggal Kembali</th>
+                                <th class="py-2.5 px-3">Maskapai</th>
+                                <th class="py-2.5 px-3 text-center w-24">Jumlah Hari</th>
+                                <th class="py-2.5 px-3">Keterangan</th>
+                                <th class="py-2.5 px-3 text-center w-24">Dokumen</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($employee->leaves()->orderBy('leave_start_date', 'desc')->get() as $idx => $leave)
+                            <tr>
+                                <td class="py-2.5 px-3 font-bold text-slate-700">Cuti {{ $employee->leaves->count() - $idx }}</td>
+                                <td class="py-2.5 px-3 font-medium text-slate-800">{{ $leave->leave_start_date ? $leave->leave_start_date->format('d/m/Y') : '-' }}</td>
+                                <td class="py-2.5 px-3 text-slate-600">{{ $leave->leave_end_date ? $leave->leave_end_date->format('d/m/Y') : '-' }}</td>
+                                <td class="py-2.5 px-3 font-semibold text-teal-800">{{ $leave->airline ?? '-' }}</td>
+                                <td class="py-2.5 px-3 text-center font-bold text-brand-navy">{{ $leave->total_days ?? 1 }} Hari</td>
+                                <td class="py-2.5 px-3 text-slate-600">{{ $leave->notes ?? '-' }}</td>
+                                <td class="py-2.5 px-3 text-center">
+                                    @if($leave->document_path)
+                                    <div class="inline-flex items-center gap-1.5">
+                                        <button type="button"
+                                                @click="openFilePreview('{{ asset('storage/' . $leave->document_path) }}', 'Dokumen Cuti - {{ $leave->airline }}', '{{ strtolower(pathinfo($leave->document_path, PATHINFO_EXTENSION)) }}')"
+                                                class="text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
+                                            <i class="fa-solid fa-eye text-[10px]"></i>
+                                            <span>Lihat</span>
+                                        </button>
+                                        <span class="text-slate-300">&bull;</span>
+                                        <a href="{{ asset('storage/' . $leave->document_path) }}" download class="text-slate-500 hover:text-slate-700">
+                                            <i class="fa-solid fa-download text-[10px]"></i>
+                                        </a>
+                                    </div>
+                                    @else
+                                    <span class="text-slate-400">-</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="7" class="py-3 text-center text-slate-400 text-xs">Belum ada riwayat cuti yang tercatat.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- I. PERNYATAAN & TANDA TANGAN (SIGNATURE BLOCKS) -->
