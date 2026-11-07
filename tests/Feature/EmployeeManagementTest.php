@@ -30,7 +30,7 @@ class EmployeeManagementTest extends TestCase
 
         $response = $this->post('/login', [
             'email' => $user->email,
-            'password' => 'password123',
+            'password' => env('SUPERADMIN_PASSWORD', 'password'),
         ]);
 
         $response->assertRedirect('/dashboard');
@@ -38,7 +38,7 @@ class EmployeeManagementTest extends TestCase
 
         $dashboard = $this->actingAs($user)->get('/dashboard');
         $dashboard->assertStatus(200);
-        $dashboard->assertSee('PT Artha Buana Primacoral');
+        $dashboard->assertSee('PT Artha Buana Primacoal');
         $dashboard->assertSee('Total Karyawan');
     }
 
@@ -105,7 +105,7 @@ class EmployeeManagementTest extends TestCase
             'marital_status' => 'Belum Kawin',
             'nik' => '9102011003950001',
             'phone' => '081234567890',
-            'email' => 'karel.wenda@primacoral.com',
+            'email' => 'karel.wenda@primacoal.com',
             'position' => 'Heavy Equipment Operator',
             'department' => 'Mining Operations',
             'employment_status' => 'Aktif',
@@ -138,7 +138,7 @@ class EmployeeManagementTest extends TestCase
         // Export PDF report
         $responsePdf = $this->actingAs($admin)->get('/employees/export?format=pdf');
         $responsePdf->assertStatus(200);
-        $responsePdf->assertSee('PT ARTHA BUANA PRIMACORAL');
+        $responsePdf->assertSee('PT ARTHA BUANA PRIMACOAL');
     }
 }
 

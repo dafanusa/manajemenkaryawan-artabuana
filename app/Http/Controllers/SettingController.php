@@ -149,9 +149,10 @@ class SettingController extends Controller
                 }
             }
 
-            ActivityLog::record('sync_documents_gdrive', "Sinkronisasi {$syncedCount} berkas karyawan ke Google Drive");
+            $totalEmployees = $employees->count();
+            ActivityLog::record('sync_documents_gdrive', "Sinkronisasi {$syncedCount} berkas dokumen dari {$totalEmployees} karyawan ke Google Drive");
 
-            return back()->with('success', "Sinkronisasi selesai! Berhasil mengunggah {$syncedCount} berkas karyawan ke Google Drive.");
+            return back()->with('success', "Sinkronisasi selesai! Seluruh {$totalEmployees} folder karyawan telah aktif di Google Drive dan sebanyak {$syncedCount} berkas dokumen berhasil diunggah.");
         } catch (\Throwable $e) {
             return back()->with('error', "Gagal sinkronisasi ke Google Drive: " . $e->getMessage());
         }

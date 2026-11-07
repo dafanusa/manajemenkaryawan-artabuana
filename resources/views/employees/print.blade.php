@@ -34,7 +34,7 @@
 
             @page {
                 size: A4 portrait;
-                margin: 10mm 12mm 10mm 12mm;
+                margin: 8mm 10mm 10mm 10mm;
             }
 
             /* Container reset - use full page margins cleanly */
@@ -51,10 +51,29 @@
 
             /* Kop Header */
             .print-header {
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                border-bottom: 2px solid #2A3956 !important;
+                padding-bottom: 12px !important;
+                margin-bottom: 12px !important;
                 break-inside: avoid !important;
                 page-break-inside: avoid !important;
                 break-after: avoid !important;
                 page-break-after: avoid !important;
+            }
+
+            .print-header-box {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: flex-end !important;
+                justify-content: center !important;
+                border: 2px solid #2A3956 !important;
+                border-radius: 12px !important;
+                background-color: #ffffff !important;
+                padding: 6px 16px !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
 
             /* Setiap bagian/poin diperlakukan sebagai satu blok konten */
@@ -66,10 +85,14 @@
 
             /* Judul bagian TIDAK BOLEH terpisah dari kontennya (mencegah orphan header) */
             .print-section-header {
+                background-color: #2A3956 !important;
+                color: #ffffff !important;
                 break-after: avoid !important;
                 page-break-after: avoid !important;
                 break-inside: avoid !important;
                 page-break-inside: avoid !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
 
             /* Card dan Grid di dalam bagian */
@@ -80,7 +103,7 @@
             }
 
             /* Tabel: cegah baris terpotong & ulangi thead saat halaman berlanjut */
-            table {
+            table.w-full {
                 border-collapse: collapse !important;
                 width: 100% !important;
             }
@@ -113,8 +136,18 @@
             }
 
             .print-footer {
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                border-top: 1px solid #cbd5e1 !important;
+                margin-top: 10px !important;
+                padding-top: 6px !important;
+                font-size: 8.5pt !important;
+                color: #64748b !important;
                 break-inside: avoid !important;
                 page-break-inside: avoid !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
 
             /* Pastikan warna latar belakang dan teks resmi tercetak presisi */
@@ -128,44 +161,55 @@
 <body class="p-4 sm:p-8">
 
     <!-- Top floating action bar -->
-    <div class="no-print max-w-4xl mx-auto mb-6 flex items-center justify-between bg-white p-4 rounded-2xl shadow-md border border-slate-200">
+    <div class="no-print max-w-4xl mx-auto mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl shadow-md border border-slate-200">
         <div class="flex items-center gap-3">
-            <a href="{{ route('employees.show', $employee) }}" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-xs font-bold rounded-xl text-slate-700 transition">
-                &larr; Kembali ke Detail Karyawan
+            <a href="{{ route('employees.show', $employee) }}" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-xs font-bold rounded-xl text-slate-700 transition flex items-center gap-1.5">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Kembali</span>
             </a>
-            <span class="text-xs font-semibold text-slate-500">Pratinjau Dokumen Cetak / PDF</span>
+            <div>
+                <span class="text-xs font-bold text-slate-800 block">Pratinjau Dokumen Biodata</span>
+                <span class="text-[10px] text-slate-400">Siap diunduh sebagai file PDF atau dicetak</span>
+            </div>
         </div>
-        <button onclick="window.print()" class="px-5 py-2.5 bg-[#096256] hover:bg-[#074e44] text-white text-xs font-extrabold rounded-xl shadow-lg transition flex items-center gap-2">
-            <i class="fa-solid fa-print"></i>
-            <span>Cetak / Simpan PDF Sekarang</span>
-        </button>
+        <div class="flex items-center gap-2">
+            <!-- Tombol 1: Download PDF Langsung Tanpa Header Chrome -->
+            <button id="btnDownloadPdf" onclick="downloadPdfDirectly()" class="px-5 py-2.5 bg-[#096256] hover:bg-[#074e44] text-white text-xs font-extrabold rounded-xl shadow-lg transition flex items-center gap-2">
+                <i class="fa-solid fa-file-arrow-down text-sm"></i>
+                <span>Download PDF Langsung</span>
+            </button>
+
+            <!-- Tombol 2: Cetak ke Printer Fisik (Opsional) -->
+            <button onclick="executePrint()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 transition flex items-center gap-1.5" title="Cetak langsung ke kertas via printer fisik">
+                <i class="fa-solid fa-print"></i>
+                <span class="hidden sm:inline">Cetak Printer</span>
+            </button>
+        </div>
     </div>
 
     <!-- PRINT CONTAINER (A4 COMPATIBLE) -->
     <div class="print-container max-w-4xl mx-auto bg-white p-8 sm:p-10 shadow-lg border border-slate-200 rounded-2xl space-y-3.5 text-[10.5px] leading-tight text-slate-800">
 
-        <!-- HEADER KOP RESMI PERUSAHAAN (SESUAI REVISI #1) -->
-        <div class="border-b-2 border-[#2A3956] pb-3.5 flex items-center justify-between print-header">
-            <!-- Logo Perusahaan Proporsional (Teks samping dihapus karena sudah ada di logo) -->
-            <div class="flex items-center">
-                <img src="{{ asset('images/logo.png') }}" alt="PT Artha Buana Primacoral" class="h-11 max-h-12 w-auto object-contain">
+        <!-- HEADER KOP RESMI PERUSAHAAN (SESUAI FORMAT PREVIEW) -->
+        <div class="print-header flex items-center justify-between pb-3.5 mb-3 border-b-2 border-[#2A3956]" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2A3956; padding-bottom: 12px; margin-bottom: 12px;">
+            <!-- Logo Perusahaan Proporsional -->
+            <div class="flex items-center" style="display: flex; align-items: center; flex-shrink: 0;">
+                <img src="{{ asset('images/logo.png') }}" alt="PT Artha Buana Primacoal" class="h-11 max-h-12 w-auto object-contain" style="height: 44px; max-height: 48px; width: auto; object-fit: contain; display: block;">
             </div>
 
-            <!-- Kotak Judul Formulir HRD Lebih Menonjol dan Jelas -->
-            <div class="text-right">
-                <div class="inline-block border-2 border-[#2A3956] bg-slate-50/90 px-4 py-2 rounded-xl text-right shadow-sm">
-                    <span class="text-[9.5px] font-black uppercase tracking-widest text-[#096256] block">FORMULIR HRD</span>
-                    <span class="text-sm sm:text-base font-black text-[#2A3956] tracking-tight block leading-tight">FORM BIODATA KARYAWAN</span>
-                    <span class="text-[10px] font-mono text-slate-500 font-bold block mt-0.5">ID: {{ $employee->employee_id }}</span>
-                </div>
+            <!-- Kotak Judul Formulir HRD (Struktur Flex Murni - Anti Blank & Anti Pudar) -->
+            <div class="print-header-box flex flex-col items-end justify-center border-2 border-[#2A3956] rounded-xl px-4 py-1.5 bg-white" style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center; border: 2px solid #2A3956; border-radius: 12px; padding: 6px 16px; background-color: #ffffff; flex-shrink: 0;">
+                <span style="display: block; color: #096256; font-size: 10px; font-weight: 800; line-height: 14px; text-transform: uppercase; letter-spacing: 0.5px; font-family: 'Plus Jakarta Sans', sans-serif;">FORMULIR HRD</span>
+                <span style="display: block; color: #2A3956; font-size: 15px; font-weight: 900; line-height: 20px; white-space: nowrap; font-family: 'Plus Jakarta Sans', sans-serif;">FORM BIODATA KARYAWAN</span>
+                <span style="display: block; color: #475569; font-size: 10px; font-weight: 700; font-family: monospace, 'Courier New', Courier; line-height: 14px;">ID: {{ $employee->employee_id }}</span>
             </div>
         </div>
 
         <!-- A. DATA PRIBADI -->
         <div class="space-y-1.5 print-section">
-            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px] flex justify-between print-section-header">
+            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px] flex justify-between print-section-header" style="background-color: #2A3956 !important; color: #ffffff !important;">
                 <span>A. DATA PRIBADI</span>
-                <span class="font-mono text-[9px] text-teal-200">Status: {{ $employee->employment_status }}</span>
+                <span class="font-mono text-[9px] text-teal-200" style="color: #99f6e4 !important;">Status: {{ $employee->employment_status }}</span>
             </div>
 
             <div class="flex gap-4 items-start print-card">
@@ -184,7 +228,7 @@
                     </div>
                     <div class="flex border-b border-slate-100 pb-0.5">
                         <span class="w-32 font-semibold text-slate-600">Suku</span>
-                        <span class="font-bold text-[#096256]">: {{ $employee->ethnicity }}</span>
+                        <span class="font-bold text-[#096256]" style="color: #096256 !important;">: {{ $employee->ethnicity }}</span>
                     </div>
                     <div class="flex border-b border-slate-100 pb-0.5">
                         <span class="w-32 font-semibold text-slate-600">Tempat / Tgl. Lahir</span>
@@ -528,13 +572,13 @@
         <div class="space-y-1 print-section">
             <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px] flex justify-between print-section-header">
                 <span>H. GAJI & RIWAYAT CUTI</span>
-                @if(Auth::user()->isSuperAdmin())
+                @if(Auth::user()?->isSuperAdmin())
                 <span class="text-[9px] text-teal-200 font-bold">Confidential</span>
                 @endif
             </div>
 
             <!-- SALARY DETAILS (SUPER ADMIN ONLY) -->
-            @if(Auth::user()->isSuperAdmin())
+            @if(Auth::user()?->isSuperAdmin())
             <div class="border border-slate-200 p-2 rounded space-y-1 bg-teal-50/20 print-card">
                 <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
                     <p><strong>Grade:</strong> {{ $employee->line_grade ?? '-' }}</p>
@@ -600,7 +644,7 @@
 
             <div class="grid grid-cols-2 gap-8 pt-2 text-center print-card">
                 <!-- TTD Karyawan -->
-                <div class="flex flex-col items-center justify-between h-36 border border-slate-300 p-2.5 rounded-xl bg-slate-50/40">
+                <div style="background-color: #ffffff;" class="flex flex-col items-center justify-between h-36 border border-slate-300 p-2.5 rounded-xl">
                     <span class="font-black text-[12px] text-[#2A3956] uppercase tracking-wider">KARYAWAN YANG BERSANGKUTAN</span>
                     <div class="h-20 flex items-center justify-center my-0.5">
                         @php $empSign = $employee->getDocument('employee_signature'); @endphp
@@ -616,7 +660,7 @@
                 </div>
 
                 <!-- TTD HRD / Pemeriksa -->
-                <div class="flex flex-col items-center justify-between h-36 border border-slate-300 p-2.5 rounded-xl bg-slate-50/40">
+                <div style="background-color: #ffffff;" class="flex flex-col items-center justify-between h-36 border border-slate-300 p-2.5 rounded-xl">
                     <span class="font-black text-[13px] text-[#2A3956] uppercase tracking-wider">HRD / PEMERIKSA</span>
                     <div class="h-20 flex items-center justify-center my-0.5">
                         @php $hrdSign = $employee->getDocument('hrd_signature'); @endphp
@@ -633,11 +677,101 @@
             </div>
         </div>
 
-        <div class="text-center text-[8.5px] text-slate-400 pt-1 border-t border-slate-200 print-footer">
-            Form Biodata Karyawan &bull; PT Artha Buana Primacoral &bull; Dicetak: {{ date('d/m/Y H:i') }}
+        <!-- FOOTER DOKUMEN RESMI SESUAI PREVIEW -->
+        <div class="flex items-center justify-between text-[9px] text-slate-500 pt-2.5 mt-2 border-t border-slate-200 print-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 8px; margin-top: 8px;">
+            <span>Form Biodata Karyawan &bull; PT Artha Buana Primacoal &bull; Dicetak: {{ date('d/m/Y H:i') }}</span>
+            <span class="font-bold text-slate-600 font-mono">Dokumen Resmi HRD</span>
         </div>
 
     </div>
 
+    <!-- Script PDF Generator (Lokal dengan fallback CDN) -->
+    <script src="{{ asset('js/html2pdf.bundle.min.js') }}"></script>
+    <script>
+        async function downloadPdfDirectly() {
+            const btn = document.getElementById('btnDownloadPdf');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-sm"></i><span>Sedang Menyiapkan PDF...</span>';
+
+            // Pastikan seluruh font sudah selesai di-render browser
+            if (document.fonts) {
+                await document.fonts.ready;
+            }
+
+            const element = document.querySelector('.print-container');
+            
+            // Simpan status class kartu web
+            const hadShadow = element.classList.contains('shadow-lg');
+            const hadRounded = element.classList.contains('rounded-2xl');
+            const hadBorder = element.classList.contains('border');
+
+            // Lepas border kartu dan sudut melengkung sementara agar lembaran PDF kotak rapi
+            element.classList.remove('shadow-lg', 'rounded-2xl', 'border', 'border-slate-200');
+            element.style.borderRadius = '0px';
+            element.style.border = 'none';
+            element.style.boxShadow = 'none';
+
+            // Beri jeda agar browser selesai me-repaint tampilan
+            await new Promise(resolve => setTimeout(resolve, 150));
+
+            @php
+                $cleanEmpName = trim(preg_replace('/[^\p{L}\p{N}\-_]+/u', '_', $employee->full_name), '_');
+                $cleanEmpId = trim(preg_replace('/[^\p{L}\p{N}\-_]+/u', '_', $employee->employee_id), '_');
+                $pdfFileName = "Biodata_{$cleanEmpName}_{$cleanEmpId}.pdf";
+            @endphp
+            const fileName = "{{ $pdfFileName }}";
+
+            const opt = {
+                margin: [4, 4, 6, 4],
+                filename: fileName,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff',
+                    scrollY: 0,
+                    scrollX: 0
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait'
+                },
+                pagebreak: {
+                    mode: ['avoid-all', 'css', 'legacy'],
+                    avoid: ['.print-section', '.print-signature-section', 'tr']
+                }
+            };
+
+            try {
+                await html2pdf().set(opt).from(element).save();
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-check text-sm"></i><span>Berhasil Diunduh!</span>';
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                }, 3000);
+            } catch (err) {
+                console.error('Gagal generate PDF langsung:', err);
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                alert('Terjadi kendala saat download langsung. Mengalihkan ke jendela cetak...');
+                window.print();
+            } finally {
+                // Kembalikan tampilan kartu web
+                if (hadShadow) element.classList.add('shadow-lg');
+                if (hadRounded) element.classList.add('rounded-2xl');
+                if (hadBorder) element.classList.add('border', 'border-slate-200');
+                element.style.borderRadius = '';
+                element.style.border = '';
+                element.style.boxShadow = '';
+            }
+        }
+
+        function executePrint() {
+            window.print();
+        }
+    </script>
 </body>
 </html>

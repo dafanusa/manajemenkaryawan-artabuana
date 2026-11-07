@@ -57,7 +57,7 @@
                         <th class="py-3.5 px-4">User</th>
                         <th class="py-3.5 px-3">Role</th>
                         <th class="py-3.5 px-3">Status</th>
-                        <th class="py-3.5 px-4">Login Terakhir</th>
+                        <th class="py-3.5 px-4">Login Terakhir (WIT)</th>
                         <th class="py-3.5 px-3">Terdaftar Sejak</th>
                         <th class="py-3.5 px-4 text-center">Aksi</th>
                     </tr>
@@ -71,8 +71,13 @@
                                     {{ strtoupper(substr($user->name, 0, 1)) }}
                                 </div>
                                 <div>
-                                    <span class="font-bold text-brand-navy block leading-tight">{{ $user->name }}</span>
-                                    <span class="text-[10px] text-slate-400">{{ $user->email }}</span>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="font-bold text-brand-navy block leading-tight">{{ $user->name }}</span>
+                                        @if(Auth::id() === $user->id)
+                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-teal-100 text-teal-800">Anda</span>
+                                        @endif
+                                    </div>
+                                    <span class="text-[10px] text-slate-400 font-mono">{{ $user->email }}</span>
                                 </div>
                             </div>
                         </td>
@@ -107,15 +112,21 @@
 
                         <td class="py-3 px-4">
                             @if($user->last_login_at)
-                            <span class="font-medium text-slate-800 block">{{ $user->last_login_at->format('d/m/Y H:i') }}</span>
-                            <span class="text-[10px] text-slate-400 font-mono">IP: {{ $user->last_login_ip ?? '-' }}</span>
+                            <span class="font-medium text-slate-800 block">
+                                {{ $user->last_login_at->setTimezone('Asia/Jayapura')->format('d/m/Y H:i') }}
+                                <span class="text-[9px] font-extrabold text-teal-700 bg-teal-50 px-1 py-0.5 rounded border border-teal-200/60 ml-0.5">WIT</span>
+                            </span>
+                            <span class="text-[10px] text-teal-600 font-semibold block mt-0.5">
+                                <i class="fa-regular fa-clock text-[9px] mr-0.5"></i>{{ $user->last_login_at->setTimezone('Asia/Jayapura')->diffForHumans() }}
+                            </span>
+                            <span class="text-[10px] text-slate-400 font-mono block">IP: {{ $user->last_login_ip ?? '-' }}</span>
                             @else
-                            <span class="text-slate-400 italic">Belum pernah login</span>
+                            <span class="text-slate-400 italic text-xs">Belum pernah login</span>
                             @endif
                         </td>
 
-                        <td class="py-3 px-3 text-slate-500">
-                            {{ $user->created_at ? $user->created_at->format('d M Y') : '-' }}
+                        <td class="py-3 px-3 text-slate-500 text-xs">
+                            {{ $user->created_at ? $user->created_at->setTimezone('Asia/Jayapura')->translatedFormat('d M Y') : '-' }}
                         </td>
 
                         <td class="py-3 px-4 text-center">
@@ -191,12 +202,14 @@
                     <input type="text" name="name" required placeholder="Nama user..." class="w-full p-2.5 rounded-xl border border-slate-200">
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Email</label>
-                    <input type="email" name="email" required placeholder="user@primacoral.com" class="w-full p-2.5 rounded-xl border border-slate-200">
+                    <label class="block font-bold text-slate-700 mb-1">Username / Email (ID Login)</label>
+                    <input type="text" name="email" required placeholder="superadmin.hrd@... atau username" class="w-full p-2.5 rounded-xl border border-slate-200 font-mono text-xs">
+                    <span class="text-[10px] text-slate-400 mt-0.5 block">Dapat berupa format email instansi atau username login.</span>
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Password</label>
-                    <input type="password" name="password" required minlength="6" placeholder="Minimal 6 karakter" class="w-full p-2.5 rounded-xl border border-slate-200">
+                    <input type="password" name="password" required minlength="8" placeholder="Minimal 8 karakter (Huruf, angka, simbol)" class="w-full p-2.5 rounded-xl border border-slate-200">
+                    <span class="text-[10px] text-slate-400 mt-0.5 block">Gunakan kombinasi huruf besar, kecil, angka, dan simbol untuk keamanan tertinggi.</span>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -223,11 +236,14 @@
         </div>
     </div>
 
-    <!-- MODAL: EDIT USER -->
+    <!-- MODAL: EDIT USER (GANTI USERNAME & PASSWORD) -->
     <div x-show="editModal.open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
         <div @click.away="editModal.open = false" class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-                <h3 class="text-sm font-bold text-brand-navy">Edit Data Pengguna</h3>
+                <div>
+                    <h3 class="text-sm font-bold text-brand-navy">Edit Data & Kredensial Pengguna</h3>
+                    <p class="text-[11px] text-slate-400">Ubah nama, username login, atau password pengguna</p>
+                </div>
                 <button @click="editModal.open = false" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
@@ -239,12 +255,14 @@
                     <input type="text" name="name" x-model="editModal.name" required class="w-full p-2.5 rounded-xl border border-slate-200">
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Email</label>
-                    <input type="email" name="email" x-model="editModal.email" required class="w-full p-2.5 rounded-xl border border-slate-200">
+                    <label class="block font-bold text-slate-700 mb-1">Username / Email (ID Login)</label>
+                    <input type="text" name="email" x-model="editModal.email" required class="w-full p-2.5 rounded-xl border border-slate-200 font-mono text-xs">
+                    <span class="text-[10px] text-slate-400 mt-0.5 block">Ubah username / email yang digunakan saat login ke sistem.</span>
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Ganti Password (Opsional)</label>
-                    <input type="password" name="password" minlength="6" placeholder="Kosongkan jika tidak diubah" class="w-full p-2.5 rounded-xl border border-slate-200">
+                    <label class="block font-bold text-slate-700 mb-1">Ganti Password Baru (Opsional)</label>
+                    <input type="password" name="password" minlength="8" placeholder="Kosongkan jika tidak ingin mengubah password" class="w-full p-2.5 rounded-xl border border-slate-200">
+                    <span class="text-[10px] text-slate-400 mt-0.5 block">Minimal 8 karakter jika ingin mengganti password akun ini.</span>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -265,28 +283,29 @@
 
                 <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
                     <button type="button" @click="editModal.open = false" class="px-4 py-2 border rounded-xl font-semibold">Batal</button>
-                    <button type="submit" class="px-5 py-2 bg-brand-primary text-white font-bold rounded-xl shadow">Perbarui</button>
+                    <button type="submit" class="px-5 py-2 bg-brand-primary text-white font-bold rounded-xl shadow">Simpan Perubahan</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL: RESET PASSWORD -->
+    <!-- MODAL: RESET PASSWORD CEPAT -->
     <div x-show="resetPwModal.open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
         <div @click.away="resetPwModal.open = false" class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100">
             <h3 class="text-sm font-bold text-brand-navy mb-1">Reset Password Pengguna</h3>
-            <p class="text-xs text-slate-500 mb-4">Reset password untuk: <strong x-text="resetPwModal.name"></strong></p>
+            <p class="text-xs text-slate-500 mb-4">Reset password untuk: <strong x-text="resetPwModal.name" class="text-brand-navy"></strong></p>
 
             <form :action="resetPwModal.actionUrl" method="POST" class="space-y-4 text-xs">
                 @csrf
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Password Baru</label>
-                    <input type="password" name="new_password" required minlength="6" placeholder="Minimal 6 karakter" class="w-full p-2.5 rounded-xl border border-slate-200">
+                    <input type="password" name="new_password" required minlength="8" placeholder="Minimal 8 karakter" class="w-full p-2.5 rounded-xl border border-slate-200">
+                    <span class="text-[10px] text-slate-400 mt-0.5 block">Kombinasikan huruf kapital, angka, dan karakter khusus.</span>
                 </div>
 
                 <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
                     <button type="button" @click="resetPwModal.open = false" class="px-4 py-2 border rounded-xl font-semibold">Batal</button>
-                    <button type="submit" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow">Simpan Password</button>
+                    <button type="submit" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow">Simpan Password Baru</button>
                 </div>
             </form>
         </div>

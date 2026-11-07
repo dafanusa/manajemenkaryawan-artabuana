@@ -95,7 +95,7 @@ class Employee extends Model
 
     public function getDocument(string $type)
     {
-        return $this->documents->firstWhere('document_type', $type);
+        return $this->documents->where('document_type', $type)->sortByDesc('id')->first();
     }
 
     public function hasDocument(string $type): bool

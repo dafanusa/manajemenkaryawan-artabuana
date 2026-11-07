@@ -4,13 +4,18 @@
 @section('page_title', 'Pengaturan Sistem & Profil Perusahaan (Super Admin)')
 
 @section('content')
+<!-- Sticky Top Animated Progress Line (0% - 100%) -->
+<div id="topFixedProgressBarContainer" class="fixed top-0 left-0 right-0 z-[9999] h-2 bg-slate-200/80 hidden pointer-events-none">
+    <div id="topFixedProgressBar" class="h-full bg-gradient-to-r from-teal-500 via-emerald-400 to-teal-600 transition-all duration-300 shadow-lg shadow-teal-500/50" style="width: 0%"></div>
+</div>
+
 <div class="max-w-4xl mx-auto space-y-6">
 
     <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-100 shadow-sm space-y-6">
 
         <div class="flex items-center gap-4 border-b border-slate-100 pb-5">
             <div class="w-14 h-14 rounded-2xl bg-teal-50 text-brand-primary p-2 flex items-center justify-center flex-shrink-0 border border-teal-100">
-                <img src="{{ asset('images/logo-icon.png') }}" alt="Logo" class="max-h-full object-contain">
+                <img src="{{ asset('images/logo-icon.png') }}?v=2" alt="Logo" class="max-h-full object-contain">
             </div>
             <div>
                 <h2 class="text-base font-bold text-brand-navy">Identitas Perusahaan & Pengaturan Aplikasi</h2>
@@ -24,7 +29,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                     <label class="block font-bold text-slate-700 mb-1.5">Nama Perusahaan Resmi</label>
-                    <input type="text" name="company_name" value="{{ old('company_name', $settings['company_name'] ?? 'PT ARTHA BUANA PRIMACORAL') }}" required class="w-full p-2.5 rounded-xl border border-slate-200">
+                    <input type="text" name="company_name" value="{{ old('company_name', $settings['company_name'] ?? 'PT ARTHA BUANA PRIMACOAL') }}" required class="w-full p-2.5 rounded-xl border border-slate-200">
                 </div>
 
                 <div>
@@ -39,7 +44,7 @@
 
                 <div>
                     <label class="block font-bold text-slate-700 mb-1.5">Email Resmi HRD</label>
-                    <input type="email" name="company_email" value="{{ old('company_email', $settings['company_email'] ?? 'hrd@primacoral.com') }}" class="w-full p-2.5 rounded-xl border border-slate-200">
+                    <input type="email" name="company_email" value="{{ old('company_email', $settings['company_email'] ?? 'hrd@primacoal.com') }}" class="w-full p-2.5 rounded-xl border border-slate-200">
                 </div>
 
                 <div>
@@ -125,6 +130,47 @@
                         <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i>
                     </a>
                 @endif
+            </div>
+        </div>
+
+        <!-- REAL-TIME DYNAMIC PROGRESS BAR CARD (0% - 100%) -->
+        <div id="gdriveProgressCard" class="hidden rounded-2xl bg-gradient-to-r from-teal-50 via-slate-50 to-emerald-50 border-2 border-teal-500/40 p-5 shadow-lg space-y-3.5 transition-all duration-300">
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-2xl bg-teal-600 text-white flex items-center justify-center text-lg shadow-md flex-shrink-0">
+                        <i id="gdriveProgressIcon" class="fa-solid fa-cloud-arrow-up animate-bounce"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h4 id="gdriveProgressTitle" class="text-sm font-extrabold text-brand-navy">Memproses Backup Database ke Google Drive...</h4>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 animate-pulse">
+                                <span class="w-1.5 h-1.5 mr-1 bg-teal-500 rounded-full"></span> Live Progress
+                            </span>
+                        </div>
+                        <p id="gdriveProgressSubtitle" class="text-xs text-slate-500 font-medium">Mohon tunggu sebentar, sistem sedang menghubungkan dan mengunggah ke Google Drive</p>
+                    </div>
+                </div>
+                <div class="text-right flex-shrink-0">
+                    <span id="gdriveProgressPercent" class="text-2xl sm:text-3xl font-black text-teal-700 font-mono tracking-tight">0%</span>
+                </div>
+            </div>
+
+            <!-- Animated Progress Bar 0% - 100% -->
+            <div class="w-full bg-slate-200/80 rounded-full h-4 overflow-hidden p-0.5 border border-slate-300/60 shadow-inner">
+                <div id="gdriveProgressBar" class="h-full rounded-full bg-gradient-to-r from-teal-500 via-emerald-500 to-teal-600 transition-all duration-300 relative shadow-sm" style="width: 0%">
+                    <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
+                </div>
+            </div>
+
+            <!-- Dynamic Steps Indicator -->
+            <div class="flex items-center justify-between text-[11px] font-semibold text-slate-600 pt-0.5">
+                <span id="gdriveProgressStatus" class="flex items-center gap-2 text-teal-900 font-bold">
+                    <i class="fa-solid fa-circle-notch fa-spin text-teal-600"></i>
+                    <span id="gdriveProgressText">Menginisialisasi sesi OAuth 2.0 Google Drive...</span>
+                </span>
+                <span class="text-slate-400 font-mono text-[10px] flex items-center gap-1">
+                    <i class="fa-brands fa-google-drive text-amber-500"></i> arthabuana.timika@gmail.com
+                </span>
             </div>
         </div>
 
@@ -236,16 +282,30 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Folder 3: Sampah (Karyawan) -->
+            <div class="p-4 rounded-2xl bg-rose-50/50 border border-rose-200/60 space-y-2 sm:col-span-2">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 text-xs font-bold text-slate-800">
+                        <i class="fa-solid fa-trash-can text-rose-500 text-sm"></i>
+                        <span>3. Sampah (Karyawan)</span>
+                    </div>
+                    <span class="text-[10px] bg-rose-100 text-rose-700 px-2.5 py-0.5 rounded-full font-bold">Otomatisasi Sampah & Arsip</span>
+                </div>
+                <p class="text-[11px] text-slate-600 leading-relaxed">
+                    Ketika data karyawan dihapus oleh Super Admin melalui aplikasi web, sistem akan secara otomatis memindahkan seluruh folder dan berkas milik karyawan tersebut dari folder <strong>1. Data Karyawan</strong> ke folder <strong>3. Sampah (Karyawan)</strong> di Google Drive, serta melabelinya dengan format: <code class="text-rose-700 font-semibold">[Sampah (Karyawan) - DD-MM-YYYY_HH.mm WIT] [ID] Nama Karyawan</code>.
+                </p>
+            </div>
         </div>
 
         <!-- Tombol Aksi -->
         <div class="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-slate-100">
             <!-- Form Sinkronisasi Seluruh Berkas Karyawan -->
-            <form method="POST" action="{{ route('settings.sync_gdrive') }}" onsubmit="return confirm('Mulai sinkronisasi seluruh dokumen karyawan yang ada di sistem ke folder Google Drive masing-masing?');">
+            <form method="POST" action="{{ route('settings.sync_gdrive') }}" id="syncGdriveForm">
                 @csrf
-                <button type="submit" class="px-4 py-2.5 bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-2">
-                    <i class="fa-solid fa-cloud-arrow-up"></i>
-                    <span>Sinkronisasi Semua Berkas ke Drive</span>
+                <button type="submit" id="btnSyncGdrive" class="px-4 py-2.5 bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-up" id="iconSync"></i>
+                    <span id="textSync">Sinkronisasi Semua Berkas ke Drive</span>
                 </button>
             </form>
 
@@ -260,15 +320,110 @@
         </div>
     </div>
 
+    <!-- Live Progress Bar Controller (0% - 100%) -->
     <script>
+        function startProgressSimulation(mode) {
+            const topBarContainer = document.getElementById('topFixedProgressBarContainer');
+            const topBar = document.getElementById('topFixedProgressBar');
+            const card = document.getElementById('gdriveProgressCard');
+            const bar = document.getElementById('gdriveProgressBar');
+            const percentText = document.getElementById('gdriveProgressPercent');
+            const titleText = document.getElementById('gdriveProgressTitle');
+            const subtitleText = document.getElementById('gdriveProgressSubtitle');
+            const statusText = document.getElementById('gdriveProgressText');
+            const icon = document.getElementById('gdriveProgressIcon');
+
+            // Disable buttons to prevent double-click
+            const btnBackup = document.getElementById('btnBackupGdrive');
+            const btnSync = document.getElementById('btnSyncGdrive');
+            if (btnBackup) { btnBackup.disabled = true; btnBackup.classList.add('opacity-60', 'cursor-not-allowed'); }
+            if (btnSync) { btnSync.disabled = true; btnSync.classList.add('opacity-60', 'cursor-not-allowed'); }
+
+            if (mode === 'backup') {
+                titleText.textContent = 'Memproses Backup Database ke Google Drive...';
+                subtitleText.textContent = 'Mengekspor struktur MySQL dan mengunggah file .sql ke folder 2. Backup SQL';
+                icon.className = 'fa-solid fa-database text-white animate-bounce';
+                document.getElementById('textBackup').textContent = 'Mencadangkan Database...';
+                document.getElementById('iconBackup').className = 'fa-solid fa-spinner fa-spin';
+            } else {
+                titleText.textContent = 'Memproses Sinkronisasi Seluruh Berkas Karyawan...';
+                subtitleText.textContent = 'Mengunggah dan merapikan seluruh dokumen fisik ke folder 1. Data Karyawan';
+                icon.className = 'fa-solid fa-cloud-arrow-up text-white animate-bounce';
+                document.getElementById('textSync').textContent = 'Menyinkronkan Berkas...';
+                document.getElementById('iconSync').className = 'fa-solid fa-spinner fa-spin';
+            }
+
+            // Show UI Elements
+            if (topBarContainer) topBarContainer.classList.remove('hidden');
+            if (card) {
+                card.classList.remove('hidden');
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            let progress = 0;
+            function setProgress(val, message) {
+                progress = Math.min(val, 99);
+                const str = progress + '%';
+                if (bar) bar.style.width = str;
+                if (topBar) topBar.style.width = str;
+                if (percentText) percentText.textContent = str;
+                if (message && statusText) statusText.textContent = message;
+            }
+
+            // Step 1: 0% -> 22% (Init connection)
+            setProgress(5, 'Menginisialisasi koneksi aman OAuth 2.0 Google Drive...');
+            setTimeout(() => setProgress(22, 'Mengautentikasi akun arthabuana.timika@gmail.com...'), 500);
+
+            // Step 2: 22% -> 50% (Processing data)
+            setTimeout(() => {
+                if (mode === 'backup') {
+                    setProgress(48, 'Mengekspor dump seluruh tabel database MySQL...');
+                } else {
+                    setProgress(48, 'Memeriksa berkas identitas, foto, dan dokumen karyawan...');
+                }
+            }, 1400);
+
+            // Step 3: 50% -> 76% (Uploading to Drive)
+            setTimeout(() => {
+                if (mode === 'backup') {
+                    setProgress(75, 'Mengunggah file backup .sql ke folder 2. Backup SQL...');
+                } else {
+                    setProgress(75, 'Mengunggah paket berkas ke Google Drive masing-masing karyawan...');
+                }
+            }, 2800);
+
+            // Step 4: 76% -> 92% (Verifying)
+            setTimeout(() => {
+                setProgress(90, 'Memverifikasi respon Google Drive & menyelesaikan penyimpanan...');
+            }, 4500);
+
+            // Step 5: 92% -> 98% (Finalizing)
+            setTimeout(() => {
+                setProgress(96, 'Menyelesaikan pencatatan log aktivitas sistem...');
+            }, 6200);
+
+            // Slow step creep until server finishes and reloads
+            const slowInterval = setInterval(() => {
+                if (progress < 99) {
+                    setProgress(progress + 1);
+                } else {
+                    clearInterval(slowInterval);
+                }
+            }, 1000);
+        }
+
+        // Attach to Backup Form
         document.getElementById('backupGdriveForm')?.addEventListener('submit', function() {
-            const btn = document.getElementById('btnBackupGdrive');
-            const icon = document.getElementById('iconBackup');
-            const text = document.getElementById('textBackup');
-            btn.disabled = true;
-            btn.classList.add('opacity-75', 'cursor-not-allowed');
-            icon.className = 'fa-solid fa-spinner fa-spin';
-            text.innerText = 'Mencadangkan & Mengunggah Database...';
+            startProgressSimulation('backup');
+        });
+
+        // Attach to Sync Form
+        document.getElementById('syncGdriveForm')?.addEventListener('submit', function(e) {
+            if (!confirm('Mulai sinkronisasi seluruh dokumen karyawan yang ada di sistem ke folder Google Drive masing-masing?')) {
+                e.preventDefault();
+                return false;
+            }
+            startProgressSimulation('sync');
         });
     </script>
 

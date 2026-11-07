@@ -19,8 +19,9 @@ class DepartmentController extends Controller
         }
 
         $departments = $query->orderBy('name')->paginate(15)->withQueryString();
+        $allDepartments = Department::where('is_active', true)->orderBy('name')->get(['id', 'name']);
 
-        return view('departments.index', compact('departments'));
+        return view('departments.index', compact('departments', 'allDepartments'));
     }
 
     public function store(Request $request)
@@ -96,14 +97,43 @@ class DepartmentController extends Controller
             ->with('success', "Departemen '{$newName}' berhasil diperbarui!");
     }
 
-    public function destroy(Department $department)
+    public function destroy(Request $request, Department $department)
     {
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Hanya Super Admin yang diizinkan menghapus departemen.');
+        }
+
         $employeeCount = Employee::where('department_id', $department->id)
             ->orWhere('department', $department->name)
             ->count();
 
         if ($employeeCount > 0) {
-            return back()->with('error', "Departemen '{$department->name}' tidak dapat dihapus karena masih digunakan oleh {$employeeCount} karyawan.");
+            $action = $request->input('employee_action', 'reassign'); // 'reassign' or 'detach'
+            $targetDeptId = $request->input('target_department_id');
+
+            if ($action === 'reassign') {
+                if (!$targetDeptId) {
+                    return back()->with('error', "Silakan pilih departemen tujuan untuk memindahkan {$employeeCount} karyawan yang terdampak.");
+                }
+
+                $targetDept = Department::where('id', '!=', $department->id)->findOrFail($targetDeptId);
+
+                Employee::where('department_id', $department->id)
+                    ->orWhere('department', $department->name)
+                    ->update([
+                        'department_id' => $targetDept->id,
+                        'department' => $targetDept->name,
+                    ]);
+            } elseif ($action === 'detach') {
+                Employee::where('department_id', $department->id)
+                    ->orWhere('department', $department->name)
+                    ->update([
+                        'department_id' => null,
+                        'department' => null,
+                    ]);
+            } else {
+                return back()->with('error', "Departemen '{$department->name}' masih memiliki {$employeeCount} karyawan. Silakan pilih opsi pemindahan karyawan terlebih dahulu.");
+            }
         }
 
         $name = $department->name;
@@ -111,7 +141,7 @@ class DepartmentController extends Controller
 
         ActivityLog::record(
             'hapus_departemen',
-            "Menghapus departemen: {$name}",
+            "Menghapus departemen: {$name}" . ($employeeCount > 0 ? " ({$employeeCount} karyawan dialihkan/dikosongkan)" : ''),
             'Department'
         );
 

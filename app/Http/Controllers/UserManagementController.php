@@ -21,10 +21,15 @@ class UserManagementController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:6'],
+            'email' => ['required', 'string', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8'],
             'role' => ['required', 'in:super_admin,admin'],
             'status' => ['required', 'in:active,inactive'],
+        ], [
+            'email.required' => 'Username / Email wajib diisi.',
+            'email.unique' => 'Username / Email sudah digunakan oleh pengguna lain.',
+            'password.required' => 'Password wajib diisi.',
+            'password.min' => 'Password minimal 8 karakter.',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
@@ -38,17 +43,21 @@ class UserManagementController extends Controller
             $user->id
         );
 
-        return back()->with('success', "User {$user->name} berhasil ditambahkan!");
+        return back()->with('success', "User {$user->name} ({$user->email}) berhasil ditambahkan!");
     }
 
     public function update(Request $request, User $user)
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'email' => ['required', 'string', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'role' => ['required', 'in:super_admin,admin'],
             'status' => ['required', 'in:active,inactive'],
-            'password' => ['nullable', 'string', 'min:6'],
+            'password' => ['nullable', 'string', 'min:8'],
+        ], [
+            'email.required' => 'Username / Email wajib diisi.',
+            'email.unique' => 'Username / Email sudah digunakan oleh pengguna lain.',
+            'password.min' => 'Password baru minimal 8 karakter.',
         ]);
 
         // Prevent self demotion or deactivation
@@ -61,7 +70,10 @@ class UserManagementController extends Controller
             }
         }
 
-        if (!empty($validated['password'])) {
+        $oldEmail = $user->email;
+        $passwordChanged = !empty($validated['password']);
+
+        if ($passwordChanged) {
             $validated['password'] = Hash::make($validated['password']);
         } else {
             unset($validated['password']);
@@ -69,9 +81,17 @@ class UserManagementController extends Controller
 
         $user->update($validated);
 
+        $logMsg = "Memperbarui akun {$user->name} ({$user->email})";
+        if ($oldEmail !== $user->email) {
+            $logMsg .= " (Username diubah dari {$oldEmail} ke {$user->email})";
+        }
+        if ($passwordChanged) {
+            $logMsg .= " (Password berhasil diperbarui)";
+        }
+
         ActivityLog::record(
             'edit_user',
-            "Memperbarui profil user: {$user->name} ({$user->email})",
+            $logMsg,
             'User',
             $user->id
         );
@@ -101,7 +121,10 @@ class UserManagementController extends Controller
     public function resetPassword(Request $request, User $user)
     {
         $request->validate([
-            'new_password' => ['required', 'string', 'min:6'],
+            'new_password' => ['required', 'string', 'min:8'],
+        ], [
+            'new_password.required' => 'Password baru wajib diisi.',
+            'new_password.min' => 'Password baru minimal 8 karakter.',
         ]);
 
         $user->update([
@@ -115,7 +138,7 @@ class UserManagementController extends Controller
             $user->id
         );
 
-        return back()->with('success', "Password user {$user->name} berhasil direset!");
+        return back()->with('success', "Password user {$user->name} berhasil diperbarui!");
     }
 
     public function destroy(User $user)

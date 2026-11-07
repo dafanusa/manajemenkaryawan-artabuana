@@ -103,7 +103,8 @@
                 'major' => $e->major,
                 'graduation_year' => $e->graduation_year,
                 'certificate_number' => $e->certificate_number,
-                'document_path' => $e->document_path
+                'document_path' => $e->document_path,
+                'document_name' => $employee->documents->firstWhere('file_path', $e->document_path)?->original_name ?? basename($e->document_path)
             ])->values()
             : [
                 ['level' => 'SD', 'institution_name' => '', 'major' => 'Umum', 'graduation_year' => '', 'certificate_number' => '', 'document_path' => ''],
@@ -127,7 +128,8 @@
                 'position' => $w->position,
                 'period' => $w->period,
                 'reason_for_leaving' => $w->reason_for_leaving,
-                'document_path' => $w->document_path
+                'document_path' => $w->document_path,
+                'document_name' => $employee->documents->firstWhere('file_path', $w->document_path)?->original_name ?? basename($w->document_path)
             ])->values()
             : [
                 ['company_name' => '', 'position' => '', 'period' => '', 'reason_for_leaving' => '', 'document_path' => '']
@@ -166,7 +168,8 @@
                 'certificate_name' => $c->certificate_name,
                 'certificate_number' => $c->certificate_number,
                 'valid_until' => $c->valid_until,
-                'document_path' => $c->document_path
+                'document_path' => $c->document_path,
+                'document_name' => $employee->documents->firstWhere('file_path', $c->document_path)?->original_name ?? basename($c->document_path)
             ])->values()
             : [
                 ['certificate_name' => '', 'certificate_number' => '', 'valid_until' => '', 'document_path' => '']
@@ -188,7 +191,8 @@
                 'issue_date' => $l->issue_date ? $l->issue_date->format('Y-m-d') : '',
                 'expiry_date' => $l->expiry_date ? $l->expiry_date->format('Y-m-d') : '',
                 'notes' => $l->notes ?? '',
-                'document_path' => $l->document_path
+                'document_path' => $l->document_path,
+                'document_name' => $employee->documents->firstWhere('file_path', $l->document_path)?->original_name ?? basename($l->document_path)
             ])->values()
             : [
                 ['license_type' => 'SIM A', 'license_number' => '', 'issue_date' => '', 'expiry_date' => '', 'notes' => '', 'document_path' => '']
@@ -213,7 +217,8 @@
                 'project_location' => $c->project_location ?? '',
                 'notes' => $c->notes ?? '',
                 'status' => $c->status ?? 'Aktif',
-                'document_path' => $c->document_path
+                'document_path' => $c->document_path,
+                'document_name' => $employee->documents->firstWhere('file_path', $c->document_path)?->original_name ?? basename($c->document_path)
             ])->values()
             : [
                 ['contract_number' => 'PKWT/' . date('Y') . '/001', 'start_date' => date('Y-m-d'), 'end_date' => date('Y-m-d', strtotime('+1 year')), 'position' => '', 'department' => '', 'project_location' => '', 'notes' => '', 'status' => 'Aktif', 'document_path' => '']
@@ -245,7 +250,8 @@
                 'airline' => $l->airline ?? '',
                 'total_days' => $l->total_days ?? 1,
                 'notes' => $l->notes ?? '',
-                'document_path' => $l->document_path
+                'document_path' => $l->document_path,
+                'document_name' => $employee->documents->firstWhere('file_path', $l->document_path)?->original_name ?? basename($l->document_path)
             ])->values()
             : [
                 ['leave_start_date' => '', 'leave_end_date' => '', 'airline' => '', 'total_days' => 14, 'notes' => '', 'document_path' => '']
@@ -300,7 +306,7 @@
     <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex items-center gap-4">
             <div class="w-14 h-14 rounded-2xl bg-teal-50 text-brand-primary p-2 flex items-center justify-center flex-shrink-0 border border-teal-100">
-                <img src="{{ asset('images/logo-icon.png') }}" alt="Logo" class="max-h-full object-contain">
+                <img src="{{ asset('images/logo-icon.png') }}?v=2" alt="Logo" class="max-h-full object-contain">
             </div>
             <div>
                 <span class="text-[11px] font-bold text-brand-primary tracking-wider uppercase">Mode Pengeditan Data</span>
@@ -692,8 +698,8 @@
                                     <div class="p-2 rounded-xl bg-white border border-teal-200 flex items-center justify-between text-xs mb-1.5">
                                         <span class="font-medium text-teal-800 text-[11px]">✓ Dokumen Ijazah Tersedia</span>
                                         <div class="flex items-center gap-1">
-                                            <button type="button" @click="openFilePreview('Ijazah ' + edu.level, '{{ asset('storage') }}/' + edu.document_path, 'Ijazah')" class="px-2 py-0.5 text-[10px] font-bold text-brand-primary bg-teal-50 rounded">Pratinjau</button>
-                                            <a :href="'{{ asset('storage') }}/' + edu.document_path" target="_blank" download class="px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 rounded">Unduh</a>
+                                            <button type="button" @click="openFilePreview('Ijazah ' + edu.level, '/storage/' + edu.document_path, edu.document_name || (edu.document_path ? edu.document_path.split('/').pop() : 'Ijazah'))" class="px-2 py-0.5 text-[10px] font-bold text-brand-primary bg-teal-50 rounded">Pratinjau</button>
+                                            <a :href="'/storage/' + edu.document_path" target="_blank" download class="px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 rounded">Unduh</a>
                                         </div>
                                     </div>
                                 </template>
@@ -779,8 +785,8 @@
                                     <div class="p-2 rounded-xl bg-white border border-teal-200 flex items-center justify-between text-xs mb-1.5">
                                         <span class="font-medium text-teal-800 text-[11px]">✓ Dokumen Paklaring Ada</span>
                                         <div class="flex items-center gap-1">
-                                            <button type="button" @click="openFilePreview('Paklaring ' + (exp.company_name || ''), '{{ asset('storage') }}/' + exp.document_path, 'Paklaring')" class="px-2 py-0.5 text-[10px] font-bold text-brand-primary bg-teal-50 rounded">Pratinjau</button>
-                                            <a :href="'{{ asset('storage') }}/' + exp.document_path" target="_blank" download class="px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 rounded">Unduh</a>
+                                            <button type="button" @click="openFilePreview('Surat Pengalaman - ' + (exp.company_name || ''), '/storage/' + exp.document_path, exp.document_name || (exp.document_path ? exp.document_path.split('/').pop() : 'Paklaring'))" class="px-2 py-0.5 text-[10px] font-bold text-brand-primary bg-teal-50 rounded">Pratinjau</button>
+                                            <a :href="'/storage/' + exp.document_path" target="_blank" download class="px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 rounded">Unduh</a>
                                         </div>
                                     </div>
                                 </template>
@@ -920,8 +926,8 @@
                                         <div class="p-1.5 rounded-xl bg-white border border-teal-200 flex items-center justify-between text-xs mb-1">
                                             <span class="font-medium text-teal-800 text-[10px]">✓ Ada Berkas</span>
                                             <div class="flex items-center gap-1">
-                                                <button type="button" @click="openFilePreview('Sertifikat ' + (cert.certificate_name || ''), '{{ asset('storage') }}/' + cert.document_path, 'Sertifikat')" class="px-2 py-0.5 text-[10px] font-bold text-brand-primary bg-teal-50 rounded">Pratinjau</button>
-                                                <a :href="'{{ asset('storage') }}/' + cert.document_path" target="_blank" download class="px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 rounded">Unduh</a>
+                                                <button type="button" @click="openFilePreview('Sertifikat - ' + (cert.certificate_name || ''), '/storage/' + cert.document_path, cert.document_name || (cert.document_path ? cert.document_path.split('/').pop() : 'Sertifikat'))" class="px-2 py-0.5 text-[10px] font-bold text-brand-primary bg-teal-50 rounded">Pratinjau</button>
+                                                <a :href="'/storage/' + cert.document_path" target="_blank" download class="px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 rounded">Unduh</a>
                                             </div>
                                         </div>
                                     </template>
@@ -1217,8 +1223,8 @@
                                         <div class="p-1.5 rounded-xl bg-white border border-teal-200 flex items-center justify-between text-xs mb-1">
                                             <span class="font-medium text-teal-800 text-[10px]">✓ Ada Berkas Dokumen</span>
                                             <div class="flex items-center gap-1">
-                                                <button type="button" @click="openFilePreview('SIM ' + lic.license_type, '{{ asset('storage') }}/' + lic.document_path, 'SIM')" class="px-2 py-0.5 text-[10px] font-bold text-brand-primary bg-teal-50 rounded">Pratinjau</button>
-                                                <a :href="'{{ asset('storage') }}/' + lic.document_path" target="_blank" download class="px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 rounded">Unduh</a>
+                                                <button type="button" @click="openFilePreview('SIM / License ' + lic.license_type, '/storage/' + lic.document_path, lic.document_name || (lic.document_path ? lic.document_path.split('/').pop() : 'SIM'))" class="px-2 py-0.5 text-[10px] font-bold text-brand-primary bg-teal-50 rounded">Pratinjau</button>
+                                                <a :href="'/storage/' + lic.document_path" target="_blank" download class="px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 rounded">Unduh</a>
                                             </div>
                                         </div>
                                     </template>
@@ -1445,8 +1451,8 @@
                                         <div class="p-1.5 rounded-xl bg-white border border-teal-200 flex items-center justify-between text-xs mb-1">
                                             <span class="font-medium text-teal-800 text-[10px]">✓ Dokumen Kontrak Ada</span>
                                             <div class="flex items-center gap-1">
-                                                <button type="button" @click="openFilePreview('Kontrak ' + (idx + 1), '{{ asset('storage') }}/' + c.document_path, 'Kontrak')" class="px-2 py-0.5 text-[10px] font-bold text-brand-primary bg-teal-50 rounded">Pratinjau</button>
-                                                <a :href="'{{ asset('storage') }}/' + c.document_path" target="_blank" download class="px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 rounded">Unduh</a>
+                                                <button type="button" @click="openFilePreview('Dokumen Kontrak ' + (idx + 1), '/storage/' + c.document_path, c.document_name || (c.document_path ? c.document_path.split('/').pop() : 'Kontrak'))" class="px-2 py-0.5 text-[10px] font-bold text-brand-primary bg-teal-50 rounded">Pratinjau</button>
+                                                <a :href="'/storage/' + c.document_path" target="_blank" download class="px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 rounded">Unduh</a>
                                             </div>
                                         </div>
                                     </template>
@@ -1826,8 +1832,8 @@
                                         <div class="p-1.5 rounded-xl bg-white border border-teal-200 flex items-center justify-between text-xs mb-1">
                                             <span class="font-medium text-teal-800 text-[10px]">✓ Ada Berkas Tiket/Form</span>
                                             <div class="flex items-center gap-1">
-                                                <button type="button" @click="openFilePreview('Tiket / Cuti ' + (idx + 1), '{{ asset('storage') }}/' + lv.document_path, 'Tiket')" class="px-2 py-0.5 text-[10px] font-bold text-brand-primary bg-teal-50 rounded">Pratinjau</button>
-                                                <a :href="'{{ asset('storage') }}/' + lv.document_path" target="_blank" download class="px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 rounded">Unduh</a>
+                                                <button type="button" @click="openFilePreview('Form Cuti / Tiket ' + (idx + 1), '/storage/' + lv.document_path, lv.document_name || (lv.document_path ? lv.document_path.split('/').pop() : 'Tiket'))" class="px-2 py-0.5 text-[10px] font-bold text-brand-primary bg-teal-50 rounded">Pratinjau</button>
+                                                <a :href="'/storage/' + lv.document_path" target="_blank" download class="px-2 py-0.5 text-[10px] font-bold text-slate-600 bg-slate-100 rounded">Unduh</a>
                                             </div>
                                         </div>
                                     </template>

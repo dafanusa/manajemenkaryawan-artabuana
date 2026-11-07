@@ -34,7 +34,7 @@
             <table class="w-full text-left text-xs whitespace-nowrap">
                 <thead class="bg-slate-50/80 text-slate-500 font-bold border-b border-slate-100 uppercase text-[10px] tracking-wider">
                     <tr>
-                        <th class="py-3.5 px-4">Waktu</th>
+                        <th class="py-3.5 px-4">Waktu (WIT)</th>
                         <th class="py-3.5 px-4">Pengguna</th>
                         <th class="py-3.5 px-3">Aktivitas</th>
                         <th class="py-3.5 px-4">Keterangan / Target</th>
@@ -45,8 +45,8 @@
                     @forelse($logs as $log)
                     <tr class="hover:bg-slate-50/80 transition">
                         <td class="py-3 px-4 text-slate-500 font-mono text-[11px]">
-                            <span class="font-bold text-slate-700 block">{{ $log->created_at->format('d/m/Y H:i:s') }}</span>
-                            <span class="text-[10px] text-slate-400">{{ $log->created_at->diffForHumans() }}</span>
+                            <span class="font-bold text-slate-700 block">{{ $log->created_at ? $log->created_at->setTimezone('Asia/Jayapura')->format('d/m/Y H:i:s') . ' WIT' : '-' }}</span>
+                            <span class="text-[10px] text-slate-400">{{ $log->created_at ? $log->created_at->setTimezone('Asia/Jayapura')->diffForHumans() : '' }}</span>
                         </td>
                         <td class="py-3 px-4 font-semibold text-brand-navy">
                             {{ $log->user_name ?? 'System' }}

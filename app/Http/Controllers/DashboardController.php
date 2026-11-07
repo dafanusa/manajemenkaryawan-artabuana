@@ -4,11 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use App\Models\Employee;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         // 1. Overall stats
         $totalEmployees = Employee::count();
@@ -73,6 +74,60 @@ class DashboardController extends Controller
             ->limit(8)
             ->get();
 
+        // 12. New Hire & Turnover (Analisis Masuk & Keluar Karyawan Berdasarkan Tahun)
+        $currentYear = (int) date('Y');
+        $joinYears = Employee::selectRaw('YEAR(join_date) as y')->whereNotNull('join_date')->distinct()->pluck('y')->map(fn($v) => (int)$v)->toArray();
+        $leaveYears = Employee::selectRaw('YEAR(leave_date) as y')->whereNotNull('leave_date')->distinct()->pluck('y')->map(fn($v) => (int)$v)->toArray();
+        $availableYears = array_values(array_unique(array_filter(array_merge($joinYears, $leaveYears, [$currentYear]))));
+        rsort($availableYears);
+
+        $selectedYear = (int) $request->input('year', $currentYear);
+        if (!in_array($selectedYear, $availableYears)) {
+            $selectedYear = $currentYear;
+        }
+
+        // Hitung New Hire & Karyawan Keluar pada tahun terpilih
+        $newHiresCount = Employee::whereYear('join_date', $selectedYear)->count();
+        $departuresCount = Employee::whereYear('leave_date', $selectedYear)->count();
+        $netHeadcountGrowth = $newHiresCount - $departuresCount;
+
+        // Turnover rate (%)
+        $headcountBase = $totalEmployees > 0 ? $totalEmployees : 1;
+        $turnoverRate = round(($departuresCount / $headcountBase) * 100, 1);
+
+        // Tren Bulanan (Jan - Des) untuk Tahun Terpilih
+        $monthlyHires = array_fill(1, 12, 0);
+        $monthlyDepartures = array_fill(1, 12, 0);
+
+        $hiresByMonth = Employee::whereYear('join_date', $selectedYear)
+            ->selectRaw('MONTH(join_date) as m, count(*) as count')
+            ->groupBy('m')
+            ->pluck('count', 'm');
+        foreach ($hiresByMonth as $m => $count) {
+            $monthlyHires[(int)$m] = (int)$count;
+        }
+
+        $departuresByMonth = Employee::whereYear('leave_date', $selectedYear)
+            ->selectRaw('MONTH(leave_date) as m, count(*) as count')
+            ->groupBy('m')
+            ->pluck('count', 'm');
+        foreach ($departuresByMonth as $m => $count) {
+            $monthlyDepartures[(int)$m] = (int)$count;
+        }
+
+        // Data karyawan baru & karyawan keluar di tahun terpilih
+        $yearNewHires = Employee::whereYear('join_date', $selectedYear)
+            ->orderByDesc('join_date')
+            ->get();
+
+        $yearDepartures = Employee::whereYear('leave_date', $selectedYear)
+            ->orderByDesc('leave_date')
+            ->get();
+
+        // New hire & leave tahun berjalan (2026) untuk quick indicators
+        $currentYearHires = Employee::whereYear('join_date', $currentYear)->count();
+        $currentYearDepartures = Employee::whereYear('leave_date', $currentYear)->count();
+
         return view('dashboard.index', compact(
             'totalEmployees',
             'activeEmployees',
@@ -97,7 +152,20 @@ class DashboardController extends Controller
             'positionData',
             'recentEmployees',
             'recentActivities',
-            'incompleteEmployees'
+            'incompleteEmployees',
+            'currentYear',
+            'availableYears',
+            'selectedYear',
+            'newHiresCount',
+            'departuresCount',
+            'netHeadcountGrowth',
+            'turnoverRate',
+            'monthlyHires',
+            'monthlyDepartures',
+            'yearNewHires',
+            'yearDepartures',
+            'currentYearHires',
+            'currentYearDepartures'
         ));
     }
 }

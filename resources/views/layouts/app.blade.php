@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Dashboard') - Employee Management System | PT Artha Buana Primacoral</title>
+    <title>@yield('title', 'Dashboard') - Employee Management System | PT Artha Buana Primacoal</title>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ asset('images/logo-icon.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-icon.png') }}?v=2">
 
     <!-- Google Fonts: Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -123,51 +123,88 @@
         let fileName = '';
         let downloadUrl = '';
 
-        // Deteksi apakah string berbentuk URL, path, atau nama file berekstensi
-        const isUrlOrPath = (str) => typeof str === 'string' && (
-            str.startsWith('http://') ||
-            str.startsWith('https://') ||
-            str.startsWith('/') ||
-            str.startsWith('blob:') ||
-            str.startsWith('data:') ||
-            str.includes('/') ||
-            str.includes('\\') ||
-            /\.(pdf|jpg|jpeg|png|webp|gif|svg|bmp)(\?|$)/i.test(str)
-        );
+        // Deteksi secara akurat apakah string adalah URL / path file fisik
+        const isFileUrl = (str) => {
+            if (typeof str !== 'string' || !str) return false;
+            const s = str.trim();
+            if (s.startsWith('http://') || s.startsWith('https://') || s.startsWith('blob:') || s.startsWith('data:')) return true;
+            if (s.startsWith('/storage/') || s.startsWith('storage/') || s.includes('/employees/') || s.includes('employees/')) return true;
+            if (/\.(pdf|jpg|jpeg|png|webp|gif|svg|bmp)(\?.*)?$/i.test(s)) return true;
+            return false;
+        };
 
-        if (isUrlOrPath(arg1) && !isUrlOrPath(arg2)) {
+        if (isFileUrl(arg1) && !isFileUrl(arg2)) {
             // Pola: openFilePreview(url, title, fileName, downloadUrl)
             url = arg1;
             title = arg2;
             fileName = arg3;
             downloadUrl = arg4;
-        } else if (!isUrlOrPath(arg1) && isUrlOrPath(arg2)) {
+        } else if (!isFileUrl(arg1) && isFileUrl(arg2)) {
             // Pola: openFilePreview(title, url, fileName, downloadUrl)
             title = arg1;
             url = arg2;
             fileName = arg3;
             downloadUrl = arg4;
-        } else if (typeof arg2 === 'string' && (arg2.includes('/') || arg2.startsWith('blob:') || arg2.startsWith('data:'))) {
+        } else if (isFileUrl(arg2)) {
             title = arg1;
             url = arg2;
             fileName = arg3;
             downloadUrl = arg4;
+        } else if (isFileUrl(arg1)) {
+            url = arg1;
+            title = arg2;
+            fileName = arg3;
+            downloadUrl = arg4;
         } else {
             url = arg1 || '';
-            title = arg2 || '';
+            title = arg2 || 'Pratinjau Dokumen';
             fileName = arg3 || '';
             downloadUrl = arg4 || '';
+        }
+
+        // 1. SANITASI JUDUL (TITLE):
+        // Jika title kosong atau masih berisi path /storage/employees/..., berikan label manusiawi
+        if (!title || title.startsWith('/storage') || title.startsWith('storage/') || title.includes('/employees/')) {
+            if (url.includes('/leaves/')) title = 'Form Cuti / Tiket';
+            else if (url.includes('/ktp/')) title = 'Dokumen KTP';
+            else if (url.includes('/kk/')) title = 'Kartu Keluarga (KK)';
+            else if (url.includes('/id_card/')) title = 'ID Card';
+            else if (url.includes('/npwp/')) title = 'Kartu NPWP';
+            else if (url.includes('/bpjs_kes/')) title = 'BPJS Kesehatan';
+            else if (url.includes('/bpjs_tk/')) title = 'BPJS Ketenagakerjaan';
+            else if (url.includes('/bank_book/')) title = 'Buku Rekening';
+            else if (url.includes('/salary_slip/')) title = 'Slip Gaji';
+            else if (url.includes('/education/')) title = 'Ijazah Pendidikan';
+            else if (url.includes('/experience/')) title = 'Surat Pengalaman Kerja';
+            else if (url.includes('/certificate/')) title = 'Sertifikat Pelatihan';
+            else if (url.includes('/contracts/')) title = 'Kontrak Kerja (PKWT)';
+            else if (url.includes('/licenses/')) title = 'SIM / License';
+            else if (url.includes('/photos/')) title = 'Pas Foto Karyawan';
+            else if (url.includes('/employee_signature/')) title = 'TTD Karyawan';
+            else if (url.includes('/hrd_signature/')) title = 'TTD HRD';
+            else title = 'Pratinjau Dokumen';
+        }
+
+        // 2. SANITASI NAMA FILE (FILENAME):
+        // Jangan pernah biarkan path storage panjang tampil sebagai nama file
+        if (!fileName || fileName.startsWith('/storage') || fileName.startsWith('storage/') || fileName.includes('/') || fileName.includes('\\')) {
+            fileName = url ? url.split('/').pop().split('?')[0] : 'Dokumen';
+        }
+
+        // 3. Normalisasi URL
+        if (url && !url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('blob:') && !url.startsWith('data:') && !url.startsWith('/')) {
+            url = '/' + url;
         }
 
         this.filePreviewModal.url = url || '';
         this.filePreviewModal.downloadUrl = downloadUrl || url || '';
         this.filePreviewModal.title = title || 'Pratinjau Dokumen';
-        this.filePreviewModal.fileName = fileName || (url ? url.split('/').pop().split('?')[0] : 'Dokumen');
+        this.filePreviewModal.fileName = fileName || 'Dokumen';
 
-        const checkStr = ((url || '') + ' ' + (this.filePreviewModal.fileName || '') + ' ' + (title || '')).toLowerCase();
-
+        // Deteksi jenis file (PDF atau Gambar)
+        const checkStr = ((url || '') + ' ' + (this.filePreviewModal.fileName || '')).toLowerCase();
         this.filePreviewModal.isPdf = checkStr.includes('.pdf');
-        this.filePreviewModal.isImage = /\.(jpg|jpeg|png|webp|gif|svg|bmp)(\?|\s|$)/i.test(checkStr);
+        this.filePreviewModal.isImage = /\.(jpg|jpeg|png|webp|gif|svg|bmp)(\?.*)?$/i.test(checkStr);
 
         this.filePreviewModal.open = true;
     }
@@ -201,10 +238,10 @@
             <!-- Logo Section -->
             <div class="h-20 flex items-center justify-between px-4 border-b border-white/10 bg-[#1e2a40]">
                 <a href="{{ route('dashboard') }}" class="flex items-center gap-3 overflow-hidden">
-                    <img src="{{ asset('images/logo-icon.png') }}" alt="ABP Logo" class="h-11 w-11 object-contain flex-shrink-0 bg-white p-1 rounded-xl shadow-md">
+                    <img src="{{ asset('images/logo-icon.png') }}?v=2" alt="ABP Logo" class="h-11 w-11 object-contain flex-shrink-0 bg-white p-1.5 rounded-xl shadow-md">
                     <div x-show="!sidebarCollapsed" x-transition.opacity.duration.200ms class="flex flex-col leading-tight">
                         <span class="font-bold text-base tracking-wide text-white">HRD SYSTEM</span>
-                        <span class="text-[10px] tracking-wider text-teal-300 uppercase font-semibold">PT Artha Buana Primacoral</span>
+                        <span class="text-[10px] tracking-wider text-teal-300 uppercase font-semibold">PT Artha Buana Primacoal</span>
                     </div>
                 </a>
                 <button @click="mobileSidebarOpen = false" class="lg:hidden text-white/70 hover:text-white p-1">
@@ -357,12 +394,27 @@
 
                     <div class="border-l border-slate-200 pl-3 sm:pl-4 hidden sm:block">
                         <h1 class="text-lg sm:text-xl font-bold text-brand-navy">@yield('page_title', 'Employee Management System')</h1>
-                        <p class="text-xs text-slate-400 font-medium">PT Artha Buana Primacoral &bull; {{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}</p>
+                        <p class="text-xs text-slate-400 font-medium">
+                            PT Artha Buana Primacoal &bull; 
+                            <span id="live-wit-date">{{ \Carbon\Carbon::now()->setTimezone('Asia/Jayapura')->translatedFormat('l, d F Y') }}</span> &bull; 
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200/60">WIT (UTC+9)</span>
+                        </p>
                     </div>
                 </div>
 
                 <!-- Right: Quick Links, Search & User info -->
                 <div class="flex items-center gap-2 sm:gap-4">
+
+                    <!-- Live WIT Real-time Clock Widget -->
+                    <div class="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs shadow-sm hover:border-teal-300 transition" title="Waktu Indonesia Timur (WIT / Timika, Papua - UTC+9)">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+                        </span>
+                        <i class="fa-regular fa-clock text-teal-600 text-xs"></i>
+                        <span id="live-wit-clock" class="font-mono font-bold text-brand-navy tracking-wider text-xs sm:text-sm">--:--:--</span>
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-teal-100 text-teal-800 tracking-wide">WIT</span>
+                    </div>
 
                     <!-- Quick Add Button -->
                     <a href="{{ route('employees.create') }}" class="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-semibold rounded-xl shadow-md shadow-brand-primary/20 transition">
@@ -603,6 +655,53 @@
 
         </div>
     </div>
+
+    <!-- Live Real-Time WIT Clock (Asia/Jayapura, UTC+9) -->
+    <script>
+        (function initWITClock() {
+            const clockEl = document.getElementById('live-wit-clock');
+            const dateEl = document.getElementById('live-wit-date');
+
+            function updateClock() {
+                try {
+                    const now = new Date();
+                    if (clockEl) {
+                        const timeStr = now.toLocaleTimeString('id-ID', {
+                            timeZone: 'Asia/Jayapura',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false
+                        }).replace(/\./g, ':');
+                        clockEl.textContent = timeStr;
+                    }
+                    if (dateEl) {
+                        const dateStr = now.toLocaleDateString('id-ID', {
+                            timeZone: 'Asia/Jayapura',
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                        });
+                        dateEl.textContent = dateStr;
+                    }
+                } catch (e) {
+                    // Fallback if browser timezone not supported
+                    const now = new Date();
+                    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+                    const witDate = new Date(utc + (3600000 * 9));
+                    if (clockEl) {
+                        const h = String(witDate.getHours()).padStart(2, '0');
+                        const m = String(witDate.getMinutes()).padStart(2, '0');
+                        const s = String(witDate.getSeconds()).padStart(2, '0');
+                        clockEl.textContent = `${h}:${m}:${s}`;
+                    }
+                }
+            }
+            updateClock();
+            setInterval(updateClock, 1000);
+        })();
+    </script>
 
     @stack('scripts')
 </body>

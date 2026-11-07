@@ -4,7 +4,7 @@
 @section('page_title', 'Daftar & Manajemen Data Karyawan')
 
 @section('content')
-<div class="space-y-5" x-data="{ filterOpen: {{ request()->anyFilled(['status', 'gender', 'ethnicity', 'religion', 'work_location', 'department', 'incomplete_docs']) ? 'true' : 'false' }} }">
+<div class="space-y-5" x-data="{ filterOpen: {{ request()->anyFilled(['status', 'gender', 'ethnicity', 'religion', 'work_location', 'department', 'incomplete_docs', 'join_year', 'leave_year', 'quick_filter']) ? 'true' : 'false' }} }">
 
     <!-- TOP CONTROLS & ACTIONS -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
@@ -12,7 +12,7 @@
         <!-- Search Bar -->
         <form method="GET" action="{{ route('employees.index') }}" class="flex-1 max-w-lg">
             <!-- Retain current filters -->
-            @foreach(request()->only(['status', 'gender', 'ethnicity', 'religion', 'work_location', 'department', 'incomplete_docs']) as $key => $val)
+            @foreach(request()->only(['status', 'gender', 'ethnicity', 'religion', 'work_location', 'department', 'incomplete_docs', 'join_year', 'leave_year', 'quick_filter']) as $key => $val)
                 <input type="hidden" name="{{ $key }}" value="{{ $val }}">
             @endforeach
 
@@ -47,7 +47,7 @@
                     class="px-3.5 py-2.5 rounded-xl border text-xs font-semibold hover:bg-slate-50 transition flex items-center gap-2">
                 <i class="fa-solid fa-filter text-xs"></i>
                 <span>Filter</span>
-                @if(request()->anyFilled(['status', 'gender', 'ethnicity', 'religion', 'work_location', 'department', 'incomplete_docs']))
+                @if(request()->anyFilled(['status', 'gender', 'ethnicity', 'religion', 'work_location', 'department', 'incomplete_docs', 'join_year', 'leave_year', 'quick_filter']))
                 <span class="w-2 h-2 rounded-full bg-brand-primary"></span>
                 @endif
             </button>
@@ -85,6 +85,58 @@
 
     </div>
 
+    <!-- QUICK FILTER SHORTCUT BAR (Semua, New Hire, Keluar, Aktif, Tidak Aktif) -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
+        <!-- Semua -->
+        <a href="{{ route('employees.index') }}"
+           class="px-3.5 py-2 rounded-2xl font-bold transition flex items-center gap-2 whitespace-nowrap {{ !request()->hasAny(['status', 'join_year', 'leave_year', 'quick_filter', 'incomplete_docs']) ? 'bg-brand-primary text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50' }}">
+            <span>Semua Karyawan</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] {{ !request()->hasAny(['status', 'join_year', 'leave_year', 'quick_filter', 'incomplete_docs']) ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600' }}">
+                {{ $totalCount }}
+            </span>
+        </a>
+
+        <!-- New Hire Tahun Ini (2026) -->
+        <a href="{{ route('employees.index', ['join_year' => $currentYear]) }}"
+           class="px-3.5 py-2 rounded-2xl font-bold transition flex items-center gap-2 whitespace-nowrap {{ request('join_year') == $currentYear ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-emerald-50 hover:text-emerald-700' }}">
+            <i class="fa-solid fa-user-plus text-[11px] {{ request('join_year') == $currentYear ? 'text-white' : 'text-emerald-600' }}"></i>
+            <span>New Hire Tahun Ini ({{ $currentYear }})</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] {{ request('join_year') == $currentYear ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800' }}">
+                {{ $newHiresThisYearCount }}
+            </span>
+        </a>
+
+        <!-- Karyawan Keluar Tahun Ini (2026) -->
+        <a href="{{ route('employees.index', ['leave_year' => $currentYear]) }}"
+           class="px-3.5 py-2 rounded-2xl font-bold transition flex items-center gap-2 whitespace-nowrap {{ request('leave_year') == $currentYear ? 'bg-rose-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-rose-50 hover:text-rose-700' }}">
+            <i class="fa-solid fa-user-minus text-[11px] {{ request('leave_year') == $currentYear ? 'text-white' : 'text-rose-600' }}"></i>
+            <span>Keluar Tahun Ini ({{ $currentYear }})</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] {{ request('leave_year') == $currentYear ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-800' }}">
+                {{ $leaveThisYearCount }}
+            </span>
+        </a>
+
+        <!-- Karyawan Aktif -->
+        <a href="{{ route('employees.index', ['status' => 'Aktif']) }}"
+           class="px-3.5 py-2 rounded-2xl font-bold transition flex items-center gap-2 whitespace-nowrap {{ request('status') === 'Aktif' && !request()->hasAny(['join_year', 'leave_year']) ? 'bg-teal-700 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50' }}">
+            <i class="fa-solid fa-circle-check text-[11px] {{ request('status') === 'Aktif' && !request()->hasAny(['join_year', 'leave_year']) ? 'text-white' : 'text-teal-600' }}"></i>
+            <span>Aktif</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] {{ request('status') === 'Aktif' && !request()->hasAny(['join_year', 'leave_year']) ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600' }}">
+                {{ $activeCount }}
+            </span>
+        </a>
+
+        <!-- Tidak Aktif -->
+        <a href="{{ route('employees.index', ['status' => 'Tidak Aktif']) }}"
+           class="px-3.5 py-2 rounded-2xl font-bold transition flex items-center gap-2 whitespace-nowrap {{ request('status') === 'Tidak Aktif' && !request()->hasAny(['join_year', 'leave_year']) ? 'bg-slate-700 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50' }}">
+            <i class="fa-solid fa-user-xmark text-[11px] {{ request('status') === 'Tidak Aktif' && !request()->hasAny(['join_year', 'leave_year']) ? 'text-white' : 'text-slate-400' }}"></i>
+            <span>Tidak Aktif</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] {{ request('status') === 'Tidak Aktif' && !request()->hasAny(['join_year', 'leave_year']) ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600' }}">
+                {{ $inactiveCount }}
+            </span>
+        </a>
+    </div>
+
     <!-- FILTER PANEL (COLLAPSIBLE) -->
     <div x-show="filterOpen" x-collapse x-cloak class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -97,7 +149,7 @@
             </a>
         </div>
 
-        <form method="GET" action="{{ route('employees.index') }}" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <form method="GET" action="{{ route('employees.index') }}" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
             @if(request('search'))
             <input type="hidden" name="search" value="{{ request('search') }}">
             @endif
@@ -109,6 +161,28 @@
                     <option value="">Semua Status</option>
                     <option value="Aktif" {{ request('status') === 'Aktif' ? 'selected' : '' }}>Aktif</option>
                     <option value="Tidak Aktif" {{ request('status') === 'Tidak Aktif' ? 'selected' : '' }}>Tidak Aktif</option>
+                </select>
+            </div>
+
+            <!-- Tahun Masuk (New Hire) -->
+            <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Tahun Masuk</label>
+                <select name="join_year" class="w-full py-2 px-2.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-brand-primary bg-white">
+                    <option value="">Semua Tahun</option>
+                    @foreach($availableYears as $year)
+                    <option value="{{ $year }}" {{ request('join_year') == $year ? 'selected' : '' }}>Tahun {{ $year }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Tahun Keluar (Turnover) -->
+            <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Tahun Keluar</label>
+                <select name="leave_year" class="w-full py-2 px-2.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-brand-primary bg-white">
+                    <option value="">Semua Tahun</option>
+                    @foreach($availableYears as $year)
+                    <option value="{{ $year }}" {{ request('leave_year') == $year ? 'selected' : '' }}>Tahun {{ $year }}</option>
+                    @endforeach
                 </select>
             </div>
 
@@ -164,7 +238,7 @@
                 </select>
             </div>
 
-            <div class="col-span-2 sm:col-span-3 lg:col-span-6 flex items-center justify-between pt-2">
+            <div class="col-span-2 sm:col-span-4 lg:col-span-8 flex items-center justify-between pt-2">
                 <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-amber-800">
                     <input type="checkbox" name="incomplete_docs" value="1" {{ request('incomplete_docs') ? 'checked' : '' }} class="w-4 h-4 rounded text-amber-600 border-slate-300">
                     <span>Hanya tampilkan karyawan dengan dokumen belum lengkap</span>
@@ -175,6 +249,36 @@
             </div>
         </form>
     </div>
+
+    <!-- ACTIVE FILTER NOTICE (NEW HIRE / TURNOVER / QUICK FILTER) -->
+    @if(request('join_year') || request('leave_year') || request('quick_filter'))
+    <div class="p-3.5 rounded-2xl bg-teal-50/90 border border-teal-200 flex items-center justify-between text-xs text-brand-navy shadow-sm">
+        <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-lg bg-brand-primary text-white flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-filter text-[11px]"></i>
+            </div>
+            <div>
+                <span class="font-bold">Filter Aktif:</span>
+                <span>
+                    @if(request('join_year'))
+                        Karyawan Baru Masuk (New Hire) pada <strong>Tahun {{ request('join_year') }}</strong>
+                    @elseif(request('leave_year'))
+                        Karyawan Keluar (Turnover / Resign) pada <strong>Tahun {{ request('leave_year') }}</strong>
+                    @elseif(request('quick_filter') === 'new_hire_this_year')
+                        Karyawan Masuk Tahun Ini (<strong>{{ $currentYear }}</strong>)
+                    @elseif(request('quick_filter') === 'leave_this_year')
+                        Karyawan Keluar Tahun Ini (<strong>{{ $currentYear }}</strong>)
+                    @endif
+                    &mdash; Ditemukan <strong>{{ $employees->total() }}</strong> orang.
+                </span>
+            </div>
+        </div>
+        <a href="{{ route('employees.index') }}" class="px-3 py-1.5 rounded-xl bg-white border border-teal-200 font-bold text-brand-primary hover:text-rose-600 hover:border-rose-300 transition flex items-center gap-1.5 flex-shrink-0">
+            <i class="fa-solid fa-xmark text-xs"></i>
+            <span>Hapus Filter</span>
+        </a>
+    </div>
+    @endif
 
     <!-- EMPLOYEES TABLE CARD -->
     <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">

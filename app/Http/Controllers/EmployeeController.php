@@ -66,6 +66,25 @@ class EmployeeController extends Controller
             $query->where('department', $department);
         }
 
+        // Filter by Join Year (New Hires)
+        if ($joinYear = $request->input('join_year')) {
+            $query->whereYear('join_date', $joinYear);
+        }
+
+        // Filter by Leave Year (Turnover / Resign)
+        if ($leaveYear = $request->input('leave_year')) {
+            $query->whereYear('leave_date', $leaveYear);
+        }
+
+        // Quick Filter Shortcut
+        if ($quickFilter = $request->input('quick_filter')) {
+            if ($quickFilter === 'new_hire_this_year') {
+                $query->whereYear('join_date', date('Y'));
+            } elseif ($quickFilter === 'leave_this_year') {
+                $query->whereYear('leave_date', date('Y'));
+            }
+        }
+
         // Filter incomplete documents
         if ($request->boolean('incomplete_docs')) {
             $allEmployees = $query->get();
@@ -96,7 +115,31 @@ class EmployeeController extends Controller
         }
         $religions = ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu', 'Lainnya'];
 
-        return view('employees.index', compact('employees', 'departments', 'religions'));
+        // Quick filter counts & years
+        $currentYear = (int) date('Y');
+        $totalCount = Employee::count();
+        $activeCount = Employee::where('employment_status', 'Aktif')->count();
+        $inactiveCount = Employee::where('employment_status', 'Tidak Aktif')->count();
+        $newHiresThisYearCount = Employee::whereYear('join_date', $currentYear)->count();
+        $leaveThisYearCount = Employee::whereYear('leave_date', $currentYear)->count();
+
+        $joinYears = Employee::selectRaw('YEAR(join_date) as y')->whereNotNull('join_date')->distinct()->pluck('y')->map(fn($v) => (int)$v)->toArray();
+        $leaveYears = Employee::selectRaw('YEAR(leave_date) as y')->whereNotNull('leave_date')->distinct()->pluck('y')->map(fn($v) => (int)$v)->toArray();
+        $availableYears = array_values(array_unique(array_filter(array_merge($joinYears, $leaveYears, [$currentYear]))));
+        rsort($availableYears);
+
+        return view('employees.index', compact(
+            'employees',
+            'departments',
+            'religions',
+            'currentYear',
+            'totalCount',
+            'activeCount',
+            'inactiveCount',
+            'newHiresThisYearCount',
+            'leaveThisYearCount',
+            'availableYears'
+        ));
     }
 
     public function create()
@@ -435,7 +478,7 @@ class EmployeeController extends Controller
                         if ($request->hasFile("leaves.{$idx}.document")) {
                             $f = $request->file("leaves.{$idx}.document");
                             $docPath = $f->store('employees/documents/leaves', 'public');
-                            $this->saveAndSyncDocument($employee, 'leave_form', $f, $docPath);
+                            $this->updateOrSyncDocument($employee, 'leave_form', $f, $docPath);
                         }
 
                         $startDate = $leaveData['leave_start_date'];
@@ -760,16 +803,13 @@ class EmployeeController extends Controller
 
             // Handle Photo upload & file replacement
             if ($request->hasFile('photo')) {
-                if ($employee->photo && Storage::disk('public')->exists($employee->photo)) {
-                    Storage::disk('public')->delete($employee->photo);
-                }
                 $photoPath = $request->file('photo')->store('employees/photos', 'public');
                 $validated['photo'] = $photoPath;
 
-                $this->updateOrSyncDocument($employee, 'photo', $request->file('photo'), $photoPath);
+                $this->updateOrSyncDocument($employee, 'photo', $request->file('photo'), $photoPath, $employee->photo);
             }
 
-            // Documents upload with safe file replacement
+            // Documents upload with safe file replacement (otomatis hapus file lama di Google Drive & lokal)
             $docTypes = [
                 'doc_ktp' => 'ktp',
                 'doc_kk' => 'kk',
@@ -790,12 +830,6 @@ class EmployeeController extends Controller
                 if ($request->hasFile($inputKey)) {
                     $file = $request->file($inputKey);
                     $path = $file->store('employees/documents/' . $type, 'public');
-
-                    // Delete old file if exists
-                    $oldDoc = $employee->documents()->where('document_type', $type)->first();
-                    if ($oldDoc && Storage::disk('public')->exists($oldDoc->file_path)) {
-                        Storage::disk('public')->delete($oldDoc->file_path);
-                    }
 
                     $this->updateOrSyncDocument($employee, $type, $file, $path);
                 }
@@ -904,12 +938,10 @@ class EmployeeController extends Controller
                     if (!empty($edu['institution_name'])) {
                         $docPath = $edu['document_path'] ?? null;
                         if ($request->hasFile("educations.{$idx}.document")) {
-                            if ($docPath && Storage::disk('public')->exists($docPath)) {
-                                Storage::disk('public')->delete($docPath);
-                            }
                             $f = $request->file("educations.{$idx}.document");
-                            $docPath = $f->store('employees/documents/education', 'public');
-                            $this->saveAndSyncDocument($employee, 'ijazah_' . strtolower($edu['level'] ?? 'edu'), $f, $docPath);
+                            $newDocPath = $f->store('employees/documents/education', 'public');
+                            $this->updateOrSyncDocument($employee, 'ijazah_' . strtolower($edu['level'] ?? 'edu'), $f, $newDocPath, $docPath);
+                            $docPath = $newDocPath;
                         }
 
                         EmployeeEducation::create([
@@ -932,12 +964,10 @@ class EmployeeController extends Controller
                     if (!empty($exp['company_name'])) {
                         $docPath = $exp['document_path'] ?? null;
                         if ($request->hasFile("work_experiences.{$idx}.document")) {
-                            if ($docPath && Storage::disk('public')->exists($docPath)) {
-                                Storage::disk('public')->delete($docPath);
-                            }
                             $f = $request->file("work_experiences.{$idx}.document");
-                            $docPath = $f->store('employees/documents/experience', 'public');
-                            $this->saveAndSyncDocument($employee, 'pengalaman_kerja', $f, $docPath);
+                            $newDocPath = $f->store('employees/documents/experience', 'public');
+                            $this->updateOrSyncDocument($employee, 'pengalaman_kerja', $f, $newDocPath, $docPath);
+                            $docPath = $newDocPath;
                         }
 
                         WorkExperience::create([
@@ -959,12 +989,10 @@ class EmployeeController extends Controller
                     if (!empty($cert['certificate_name'])) {
                         $docPath = $cert['document_path'] ?? null;
                         if ($request->hasFile("certificates.{$idx}.document")) {
-                            if ($docPath && Storage::disk('public')->exists($docPath)) {
-                                Storage::disk('public')->delete($docPath);
-                            }
                             $f = $request->file("certificates.{$idx}.document");
-                            $docPath = $f->store('employees/documents/certificate', 'public');
-                            $this->saveAndSyncDocument($employee, 'sertifikat', $f, $docPath);
+                            $newDocPath = $f->store('employees/documents/certificate', 'public');
+                            $this->updateOrSyncDocument($employee, 'sertifikat', $f, $newDocPath, $docPath);
+                            $docPath = $newDocPath;
                         }
 
                         EmployeeCertificate::create([
@@ -1000,12 +1028,10 @@ class EmployeeController extends Controller
                     if (!empty($cData['contract_number']) || !empty($cData['start_date'])) {
                         $docPath = $cData['document_path'] ?? null;
                         if ($request->hasFile("contracts.{$idx}.document")) {
-                            if ($docPath && Storage::disk('public')->exists($docPath)) {
-                                Storage::disk('public')->delete($docPath);
-                            }
                             $f = $request->file("contracts.{$idx}.document");
-                            $docPath = $f->store('employees/documents/contracts', 'public');
-                            $this->saveAndSyncDocument($employee, 'kontrak_kerja', $f, $docPath);
+                            $newDocPath = $f->store('employees/documents/contracts', 'public');
+                            $this->updateOrSyncDocument($employee, 'kontrak_kerja', $f, $newDocPath, $docPath);
+                            $docPath = $newDocPath;
                         }
 
                         EmployeeContract::create([
@@ -1032,12 +1058,10 @@ class EmployeeController extends Controller
                     if (!empty($licData['license_type'])) {
                         $docPath = $licData['document_path'] ?? null;
                         if ($request->hasFile("licenses.{$idx}.document")) {
-                            if ($docPath && Storage::disk('public')->exists($docPath)) {
-                                Storage::disk('public')->delete($docPath);
-                            }
                             $f = $request->file("licenses.{$idx}.document");
-                            $docPath = $f->store('employees/documents/licenses', 'public');
-                            $this->saveAndSyncDocument($employee, 'sim_license', $f, $docPath);
+                            $newDocPath = $f->store('employees/documents/licenses', 'public');
+                            $this->updateOrSyncDocument($employee, 'sim_license', $f, $newDocPath, $docPath);
+                            $docPath = $newDocPath;
                         }
 
                         EmployeeLicense::create([
@@ -1060,12 +1084,10 @@ class EmployeeController extends Controller
                     if (!empty($leaveData['leave_start_date'])) {
                         $docPath = $leaveData['document_path'] ?? null;
                         if ($request->hasFile("leaves.{$idx}.document")) {
-                            if ($docPath && Storage::disk('public')->exists($docPath)) {
-                                Storage::disk('public')->delete($docPath);
-                            }
                             $f = $request->file("leaves.{$idx}.document");
-                            $docPath = $f->store('employees/documents/leaves', 'public');
-                            $this->saveAndSyncDocument($employee, 'leave_form', $f, $docPath);
+                            $newDocPath = $f->store('employees/documents/leaves', 'public');
+                            $this->updateOrSyncDocument($employee, 'leave_form', $f, $newDocPath, $docPath);
+                            $docPath = $newDocPath;
                         }
 
                         $startDate = $leaveData['leave_start_date'];
@@ -1114,7 +1136,14 @@ class EmployeeController extends Controller
         $empName = $employee->full_name;
         $empId = $employee->employee_id;
 
-        // Delete photo & documents from storage
+        // Pindahkan folder berkas karyawan di Google Drive ke folder '3. Sampah (Karyawan)'
+        try {
+            app(GoogleDriveService::class)->moveEmployeeToTrash($employee);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Google Drive move to trash failed on employee destroy: " . $e->getMessage());
+        }
+
+        // Delete photo & documents from local storage
         if ($employee->photo && Storage::disk('public')->exists($employee->photo)) {
             Storage::disk('public')->delete($employee->photo);
         }
@@ -1129,12 +1158,12 @@ class EmployeeController extends Controller
 
         ActivityLog::record(
             'hapus_karyawan',
-            "Menghapus data karyawan: {$empName} ({$empId})",
+            "Menghapus data karyawan: {$empName} ({$empId}) dan memindahkan berkas Google Drive ke folder 3. Sampah (Karyawan)",
             'Employee'
         );
 
         return redirect()->route('employees.index')
-            ->with('success', "Data karyawan {$empName} ({$empId}) berhasil dihapus!");
+            ->with('success', "Data karyawan {$empName} ({$empId}) berhasil dihapus dan berkas Google Drive telah dipindahkan ke folder '3. Sampah (Karyawan)'!");
     }
 
     public function updateStatus(Request $request, Employee $employee)
@@ -1190,6 +1219,25 @@ class EmployeeController extends Controller
         }
         if ($department = $request->input('department')) {
             $query->where('department', $department);
+        }
+
+        // Filter by Join Year (New Hires)
+        if ($joinYear = $request->input('join_year')) {
+            $query->whereYear('join_date', $joinYear);
+        }
+
+        // Filter by Leave Year (Turnover / Resign)
+        if ($leaveYear = $request->input('leave_year')) {
+            $query->whereYear('leave_date', $leaveYear);
+        }
+
+        // Quick Filter Shortcut
+        if ($quickFilter = $request->input('quick_filter')) {
+            if ($quickFilter === 'new_hire_this_year') {
+                $query->whereYear('join_date', date('Y'));
+            } elseif ($quickFilter === 'leave_this_year') {
+                $query->whereYear('leave_date', date('Y'));
+            }
         }
 
         $format = $request->input('format', 'csv');
@@ -1461,10 +1509,49 @@ class EmployeeController extends Controller
     }
 
     /**
-     * Upload document to Google Drive and update/create record in database.
+     * Hapus dokumen lama baik dari Google Drive maupun storage lokal dan database.
+     * Digunakan agar file lama di Google Drive otomatis terhapus saat file diperbarui.
      */
-    protected function updateOrSyncDocument(Employee $employee, string $documentType, $file, string $path): EmployeeDocument
+    protected function deleteExistingDocument(Employee $employee, ?string $oldPath = null, ?string $documentType = null): void
     {
+        $oldDocs = collect();
+        if (!empty($oldPath)) {
+            $oldDocs = $employee->documents()->where('file_path', $oldPath)->get();
+        }
+        if ($oldDocs->isEmpty() && !empty($documentType)) {
+            $oldDocs = $employee->documents()->where('document_type', $documentType)->get();
+        }
+
+        foreach ($oldDocs as $oldDoc) {
+            if (!empty($oldDoc->google_drive_file_id)) {
+                try {
+                    app(GoogleDriveService::class)->deleteFile($oldDoc->google_drive_file_id);
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("Gagal hapus file lama di Google Drive [{$oldDoc->google_drive_file_id}]: " . $e->getMessage());
+                }
+            }
+            if ($oldDoc->file_path && Storage::disk('public')->exists($oldDoc->file_path)) {
+                Storage::disk('public')->delete($oldDoc->file_path);
+            }
+            $oldDoc->delete();
+        }
+
+        // Pastikan file lokal juga terhapus jika ada sisa path
+        if (!empty($oldPath) && Storage::disk('public')->exists($oldPath)) {
+            Storage::disk('public')->delete($oldPath);
+        }
+    }
+
+    /**
+     * Upload document to Google Drive and update/create record in database.
+     * Otomatis menghapus file lama di Google Drive dan storage lokal saat file diperbarui.
+     */
+    protected function updateOrSyncDocument(Employee $employee, string $documentType, $file, string $path, ?string $oldPath = null): EmployeeDocument
+    {
+        // 1. Hapus dokumen lama di Google Drive, storage lokal, dan database
+        $this->deleteExistingDocument($employee, $oldPath, $documentType);
+
+        // 2. Upload file baru ke Google Drive
         $gdriveUpload = null;
         try {
             $gdriveUpload = app(GoogleDriveService::class)->uploadEmployeeDocument($employee, $documentType, $file);
@@ -1476,16 +1563,18 @@ class EmployeeController extends Controller
         $fileSize = $file instanceof \Illuminate\Http\UploadedFile ? $file->getSize() : (Storage::disk('public')->exists($path) ? Storage::disk('public')->size($path) : null);
         $mimeType = $file instanceof \Illuminate\Http\UploadedFile ? $file->getClientMimeType() : (Storage::disk('public')->exists($path) ? Storage::disk('public')->mimeType($path) : null);
 
-        return EmployeeDocument::updateOrCreate(
-            ['employee_id' => $employee->id, 'document_type' => $documentType],
-            [
-                'file_path' => $path,
-                'original_name' => $origName,
-                'file_size' => $fileSize,
-                'mime_type' => $mimeType,
-                'google_drive_file_id' => $gdriveUpload['file_id'] ?? null,
-                'google_drive_url' => $gdriveUpload['web_view_link'] ?? null,
-            ]
-        );
+        // Hapus duplikat tersisa untuk jenis dokumen single
+        $employee->documents()->where('document_type', $documentType)->where('file_path', '!=', $path)->delete();
+
+        return EmployeeDocument::create([
+            'employee_id' => $employee->id,
+            'document_type' => $documentType,
+            'file_path' => $path,
+            'original_name' => $origName,
+            'file_size' => $fileSize,
+            'mime_type' => $mimeType,
+            'google_drive_file_id' => $gdriveUpload['file_id'] ?? null,
+            'google_drive_url' => $gdriveUpload['web_view_link'] ?? null,
+        ]);
     }
 }

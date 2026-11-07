@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Employee Management System | PT Artha Buana Primacoral</title>
+    <title>Login - Employee Management System | PT Artha Buana Primacoal</title>
 
-    <link rel="icon" type="image/png" href="{{ asset('images/logo-icon.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-icon.png') }}?v=2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -48,10 +48,10 @@
             <!-- Header with Logo -->
             <div class="pt-8 pb-6 px-8 text-center bg-gradient-to-b from-teal-50/40 to-transparent">
                 <div class="inline-flex items-center justify-center p-3 bg-white rounded-2xl shadow-sm border border-slate-100 mb-4">
-                    <img src="{{ asset('images/logo.png') }}" alt="PT Artha Buana Primacoral" class="h-16 object-contain">
+                    <img src="{{ asset('images/logo.png') }}" alt="PT Artha Buana Primacoal" class="h-16 object-contain">
                 </div>
                 <h1 class="text-xl font-extrabold text-brand-navy tracking-tight">Employee Management System</h1>
-                <p class="text-xs text-brand-primary font-bold mt-1 tracking-wide uppercase">PT Artha Buana Primacoral</p>
+                <p class="text-xs text-brand-primary font-bold mt-1 tracking-wide uppercase">PT Artha Buana Primacoal</p>
                 <p class="text-xs text-slate-400 mt-2">Silakan login untuk mengakses data dan dashboard</p>
             </div>
 
@@ -77,18 +77,19 @@
 
                     <!-- Email / Username -->
                     <div>
-                        <label for="email" class="block text-xs font-bold text-slate-700 mb-1.5">Email / Username</label>
+                        <label for="email" class="block text-xs font-bold text-slate-700 mb-1.5">Username / Email</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-                                <i class="fa-regular fa-envelope text-sm"></i>
+                                <i class="fa-regular fa-user text-sm"></i>
                             </span>
-                            <input type="email"
+                            <input type="text"
                                    id="email"
                                    name="email"
                                    value="{{ old('email') }}"
                                    required
                                    autofocus
-                                   placeholder="nama@primacoral.com"
+                                   autocomplete="username"
+                                   placeholder="Masukkan username atau email..."
                                    class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition text-slate-800 placeholder:text-slate-400">
                         </div>
                     </div>
@@ -132,23 +133,10 @@
                     </button>
                 </form>
 
-                <!-- Demo Credentials Helper -->
-                <div class="mt-6 pt-5 border-t border-slate-100">
-                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 text-center">Akun Akses Cepat</p>
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                        <button type="button"
-                                onclick="document.getElementById('email').value='superadmin@primacoral.com'; document.getElementById('password').value='password123';"
-                                class="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 bg-slate-50/70 hover:bg-teal-50/50 transition text-left">
-                            <span class="block font-bold text-teal-800 text-[11px]">Super Admin</span>
-                            <span class="block text-[10px] text-slate-500">superadmin@...</span>
-                        </button>
-                        <button type="button"
-                                onclick="document.getElementById('email').value='admin@primacoral.com'; document.getElementById('password').value='password123';"
-                                class="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 bg-slate-50/70 hover:bg-teal-50/50 transition text-left">
-                            <span class="block font-bold text-slate-800 text-[11px]">Admin HRD</span>
-                            <span class="block text-[10px] text-slate-500">admin@...</span>
-                        </button>
-                    </div>
+                <!-- Security Badge Note -->
+                <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-center gap-2 text-[11px] text-slate-400">
+                    <i class="fa-solid fa-shield-halved text-emerald-600"></i>
+                    <span>Sistem Terproteksi Autentikasi Tinggi & Rate Limiting</span>
                 </div>
 
             </div>
@@ -157,7 +145,7 @@
 
         <!-- Footer Note -->
         <div class="text-center mt-6">
-            <p class="text-xs text-slate-400">&copy; {{ date('Y') }} PT Artha Buana Primacoral. All rights reserved.</p>
+            <p class="text-xs text-slate-400">&copy; {{ date('Y') }} PT Artha Buana Primacoal. All rights reserved.</p>
         </div>
 
     </div>

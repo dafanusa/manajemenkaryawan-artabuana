@@ -177,7 +177,7 @@
         <!-- HEADER KOP PERUSAHAAN (SESUAI REVISI #1) -->
         <div class="border-b-2 border-brand-navy pb-4 flex items-center justify-between">
             <div class="flex items-center">
-                <img src="{{ asset('images/logo.png') }}" alt="PT Artha Buana Primacoral" class="h-12 max-h-14 object-contain">
+                <img src="{{ asset('images/logo.png') }}" alt="PT Artha Buana Primacoal" class="h-12 max-h-14 object-contain">
             </div>
 
             <!-- Form Badge Lebih Menonjol -->
@@ -343,6 +343,7 @@
                         <td class="py-2 px-3 border-r border-slate-200">{{ $edu->certificate_number ?? '-' }}</td>
                         <td class="py-2 px-3 text-center">
                             @if($edu->document_path)
+                            @php $educationDoc = $employee->documents->firstWhere('file_path', $edu->document_path); @endphp
                             <button type="button"
                                     @click="openFilePreview('{{ asset('storage/' . $edu->document_path) }}', 'Ijazah - {{ $edu->institution_name }}', '{{ $educationDoc?->original_name ?? basename($edu->document_path) }}')"
                                     class="text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
@@ -388,6 +389,7 @@
                         <td class="py-2 px-3 border-r border-slate-200">{{ $exp->reason_for_leaving ?? '-' }}</td>
                         <td class="py-2 px-3 text-center">
                             @if($exp->document_path)
+                            @php $experienceDoc = $employee->documents->firstWhere('file_path', $exp->document_path); @endphp
                             <button type="button"
                                     @click="openFilePreview('{{ asset('storage/' . $exp->document_path) }}', 'Surat Pengalaman - {{ $exp->company_name }}', '{{ $experienceDoc?->original_name ?? basename($exp->document_path) }}')"
                                     class="text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
@@ -470,6 +472,7 @@
                             <td class="py-2 px-3 border-r border-slate-200">{{ $cert->valid_until ?? '-' }}</td>
                             <td class="py-2 px-3 text-center">
                                 @if($cert->document_path)
+                                @php $certificateDoc = $employee->documents->firstWhere('file_path', $cert->document_path); @endphp
                                 <button type="button"
                                         @click="openFilePreview('{{ asset('storage/' . $cert->document_path) }}', 'Sertifikat - {{ $cert->certificate_name }}', '{{ $certificateDoc?->original_name ?? basename($cert->document_path) }}')"
                                         class="text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
@@ -637,9 +640,10 @@
                                 </td>
                                 <td class="py-2.5 px-3 text-center">
                                     @if($lic->document_path)
+                                    @php $licDoc = $employee->documents->firstWhere('file_path', $lic->document_path); @endphp
                                     <div class="inline-flex items-center gap-1.5">
                                         <button type="button"
-                                                @click="openFilePreview('{{ asset('storage/' . $lic->document_path) }}', 'SIM/License - {{ $lic->license_type }}', '{{ strtolower(pathinfo($lic->document_path, PATHINFO_EXTENSION)) }}')"
+                                                @click="openFilePreview('{{ asset('storage/' . $lic->document_path) }}', 'SIM / License - {{ $lic->license_type }}', '{{ $licDoc?->original_name ?? basename($lic->document_path) }}')"
                                                 class="text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
                                             <i class="fa-solid fa-eye text-[10px]"></i>
                                             <span>Lihat</span>
@@ -666,7 +670,7 @@
         <div class="space-y-4">
             <div class="bg-brand-navy text-white text-xs font-bold py-1.5 px-3 rounded-lg flex items-center justify-between">
                 <span>G. DATA KEPEGAWAIAN (DIISI HRD)</span>
-                <span class="text-[10px] text-teal-200">PT Artha Buana Primacoral</span>
+                <span class="text-[10px] text-teal-200">PT Artha Buana Primacoal</span>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-xs">
@@ -760,6 +764,7 @@
                                 <td class="py-2.5 px-3 border-r border-slate-200 text-slate-500">{{ $cnt->notes ?? '-' }}</td>
                                 <td class="py-2.5 px-3 text-center">
                                     @if($cnt->document_path)
+                                    @php $contractDoc = $employee->documents->firstWhere('file_path', $cnt->document_path); @endphp
                                     <div class="inline-flex items-center gap-1.5">
                                         <button type="button"
                                                 @click="openFilePreview('{{ asset('storage/' . $cnt->document_path) }}', 'Kontrak {{ $cnt->contract_sequence }} - {{ $cnt->contract_number }}', '{{ $contractDoc?->original_name ?? basename($cnt->document_path) }}')"
@@ -992,6 +997,7 @@
                                 <td class="py-2.5 px-3 text-slate-600">{{ $leave->notes ?? '-' }}</td>
                                 <td class="py-2.5 px-3 text-center">
                                     @if($leave->document_path)
+                                    @php $leaveDoc = $employee->documents->firstWhere('file_path', $leave->document_path); @endphp
                                     <div class="inline-flex items-center gap-1.5">
                                         <button type="button"
                                                 @click="openFilePreview('{{ asset('storage/' . $leave->document_path) }}', 'Dokumen Cuti - {{ $leave->airline }}', '{{ $leaveDoc?->original_name ?? basename($leave->document_path) }}')"
@@ -1078,7 +1084,7 @@
 
         <!-- Footer Document Note -->
         <div class="pt-6 border-t border-slate-200 text-center text-[10px] text-slate-400">
-            Formulir Biodata Karyawan &bull; PT Artha Buana Primacoral &bull; Dicetak dari Employee Management System pada {{ \Carbon\Carbon::now()->translatedFormat('l, d F Y H:i:s') }}
+            Formulir Biodata Karyawan &bull; PT Artha Buana Primacoal &bull; Dicetak dari Employee Management System pada {{ \Carbon\Carbon::now()->setTimezone('Asia/Jayapura')->translatedFormat('l, d F Y H:i:s') }} WIT
         </div>
 
     </div>

@@ -234,6 +234,86 @@ class GoogleDriveService
     }
 
     /**
+     * Get or create folder '3. Sampah (Karyawan)' under root.
+     */
+    public function getTrashFolderId(): string
+    {
+        return $this->getOrCreateFolder('3. Sampah (Karyawan)', $this->getRootFolderId());
+    }
+
+    /**
+     * Move an employee's folder from '1. Data Karyawan' to '3. Sampah (Karyawan)'
+     * and rename it with deletion timestamp in WIT.
+     */
+    public function moveEmployeeToTrash(Employee $employee): ?string
+    {
+        if (!$this->isOAuthConnected() && !file_exists(config('services.google.service_account_credentials_path', storage_path('app/google-drive-credentials.json')))) {
+            return null;
+        }
+
+        try {
+            $service = $this->getDriveService();
+            $folderId = $employee->google_drive_folder_id;
+
+            // If employee does not have folder ID stored, try searching under '1. Data Karyawan'
+            if (!$folderId) {
+                $employeeCode = $employee->employee_id ?: ($employee->employee_code ?: ('EMP-' . str_pad($employee->id, 3, '0', STR_PAD_LEFT)));
+                $folderName = "[{$employeeCode}] {$employee->full_name}";
+                $parentDataFolderId = $this->getDataKaryawanFolderId();
+
+                $escapedName = str_replace("'", "\\'", $folderName);
+                $query = "mimeType = 'application/vnd.google-apps.folder' and name = '{$escapedName}' and trashed = false and '{$parentDataFolderId}' in parents";
+                $results = $service->files->listFiles([
+                    'q' => $query,
+                    'spaces' => 'drive',
+                    'fields' => 'files(id, name)',
+                    'pageSize' => 1,
+                    'supportsAllDrives' => true,
+                    'includeItemsFromAllDrives' => true,
+                ]);
+
+                if (count($results->getFiles()) > 0) {
+                    $folderId = $results->getFiles()[0]->getId();
+                }
+            }
+
+            if (!$folderId) {
+                return null;
+            }
+
+            $trashFolderId = $this->getTrashFolderId();
+
+            // Fetch current parents and name
+            $file = $service->files->get($folderId, [
+                'fields' => 'parents, name',
+                'supportsAllDrives' => true,
+            ]);
+
+            $previousParents = join(',', $file->parents ?? []);
+            $currentName = $file->getName();
+
+            // Prefix with deletion timestamp in WIT
+            $deletedTimestamp = now()->setTimezone('Asia/Jayapura')->format('d-m-Y_H.i');
+            $newName = "[Sampah (Karyawan) - {$deletedTimestamp} WIT] {$currentName}";
+
+            $updateFile = new DriveFile();
+            $updateFile->setName($newName);
+
+            $updatedFolder = $service->files->update($folderId, $updateFile, [
+                'addParents' => $trashFolderId,
+                'removeParents' => $previousParents,
+                'fields' => 'id, parents, name',
+                'supportsAllDrives' => true,
+            ]);
+
+            return $updatedFolder->id;
+        } catch (\Throwable $e) {
+            Log::warning("Google Drive moveEmployeeToTrash skipped/failed: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Map document types to the 4 category folders.
      */
     public function getCategoryFolderName(string $documentType): string
@@ -262,8 +342,31 @@ class GoogleDriveService
     {
         $parentDataFolderId = $this->getDataKaryawanFolderId();
 
-        $employeeCode = $employee->employee_code ?: ('EMP-' . str_pad($employee->id, 3, '0', STR_PAD_LEFT));
+        $employeeCode = $employee->employee_id ?: ($employee->employee_code ?: ('EMP-' . str_pad($employee->id, 3, '0', STR_PAD_LEFT)));
         $folderName = "[{$employeeCode}] {$employee->full_name}";
+
+        // 1. Cek jika folder_id sudah tersimpan di database untuk karyawan ini
+        if (!empty($employee->google_drive_folder_id)) {
+            try {
+                $service = $this->getDriveService();
+                $existing = $service->files->get($employee->google_drive_folder_id, [
+                    'fields' => 'id, name, trashed',
+                    'supportsAllDrives' => true,
+                ]);
+                if ($existing && !$existing->trashed) {
+                    // Update nama folder di Google Drive jika ada perubahan nama/ID
+                    if ($existing->name !== $folderName) {
+                        $updateFile = new DriveFile(['name' => $folderName]);
+                        $service->files->update($employee->google_drive_folder_id, $updateFile, [
+                            'supportsAllDrives' => true,
+                        ]);
+                    }
+                    return $employee->google_drive_folder_id;
+                }
+            } catch (\Throwable $e) {
+                // Folder tidak ditemukan / akses error, lanjut cari/buat baru
+            }
+        }
 
         $folderId = $this->getOrCreateFolder($folderName, $parentDataFolderId);
 
@@ -368,13 +471,35 @@ class GoogleDriveService
     }
 
     /**
+     * Delete a file from Google Drive by its file ID.
+     */
+    public function deleteFile(?string $fileId): bool
+    {
+        if (empty($fileId)) {
+            return false;
+        }
+
+        try {
+            $service = $this->getDriveService();
+            $service->files->delete($fileId, [
+                'supportsAllDrives' => true,
+            ]);
+            Log::info("GoogleDriveService: Berhasil menghapus file lama dari Google Drive [{$fileId}]");
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning("GoogleDriveService: Gagal menghapus file lama dari Google Drive [{$fileId}]: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Format a descriptive filename for clarity in Google Drive.
      */
     protected function formatDocumentFileName(Employee $employee, string $documentType, string $originalName): string
     {
         $ext = pathinfo($originalName, PATHINFO_EXTENSION);
         $cleanType = strtoupper(str_replace(['_', '-'], ' ', $documentType));
-        $employeeCode = $employee->employee_code ?: ('EMP-' . $employee->id);
+        $employeeCode = $employee->employee_id ?: ($employee->employee_code ?: ('EMP-' . $employee->id));
 
         $safeName = preg_replace('/[^a-zA-Z0-9_\-\s]/', '', $employee->full_name);
 

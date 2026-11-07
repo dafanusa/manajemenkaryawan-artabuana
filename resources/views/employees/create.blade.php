@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Input Data Karyawan')
-@section('page_title', 'Form Biodata Karyawan PT Artha Buana Primacoral')
+@section('page_title', 'Form Biodata Karyawan PT Artha Buana Primacoal')
 
 @section('content')
 <div x-data="{
@@ -209,12 +209,12 @@
     <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex items-center gap-4">
             <div class="w-14 h-14 rounded-2xl bg-teal-50 text-brand-primary p-2 flex items-center justify-center flex-shrink-0 border border-teal-100">
-                <img src="{{ asset('images/logo-icon.png') }}" alt="Logo" class="max-h-full object-contain">
+                <img src="{{ asset('images/logo-icon.png') }}?v=2" alt="Logo" class="max-h-full object-contain">
             </div>
             <div>
                 <span class="text-[11px] font-bold text-brand-primary tracking-wider uppercase">Formulir Resmi Perusahaan</span>
                 <h2 class="text-xl font-extrabold text-brand-navy">FORM BIODATA KARYAWAN</h2>
-                <p class="text-xs text-slate-400">PT Artha Buana Primacoral &bull; Lengkapi seluruh seksi data di bawah ini</p>
+                <p class="text-xs text-slate-400">PT Artha Buana Primacoal &bull; Lengkapi seluruh seksi data di bawah ini</p>
             </div>
         </div>
 

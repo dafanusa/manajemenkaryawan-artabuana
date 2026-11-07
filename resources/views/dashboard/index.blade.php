@@ -18,7 +18,7 @@
                     Selamat Datang, {{ Auth::user()->name }}! 👋
                 </h2>
                 <p class="text-teal-100/90 text-xs sm:text-sm max-w-2xl leading-relaxed">
-                    Aplikasi Manajemen Karyawan <strong>PT Artha Buana Primacoral</strong>. Seluruh metrik statistik dan visualisasi grafik di bawah ini diambil secara real-time dari database.
+                    Aplikasi Manajemen Karyawan <strong>PT Artha Buana Primacoal</strong>. Seluruh metrik statistik dan visualisasi grafik di bawah ini diambil secara real-time dari database.
                 </p>
             </div>
 
@@ -104,6 +104,253 @@
                 <i class="fa-solid fa-arrow-right text-[10px]"></i>
             </p>
         </a>
+
+    </div>
+
+    <!-- NEW HIRE & TURNOVER SECTION (ANALISIS MASUK & KELUAR KARYAWAN) -->
+    <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm space-y-6">
+        
+        <!-- Header & Year Selector Toolbar -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+            <div class="space-y-1">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-brand-primary"></span>
+                    <h3 class="text-base sm:text-lg font-extrabold text-brand-navy">
+                        Pergerakan Karyawan: New Hire & Turnover
+                    </h3>
+                    @if($selectedYear === $currentYear)
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                            <i class="fa-solid fa-calendar-check text-[10px]"></i>
+                            Tahun Berjalan ({{ $currentYear }})
+                        </span>
+                    @else
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            Arsip Tahun {{ $selectedYear }}
+                        </span>
+                    @endif
+                </div>
+                <p class="text-xs text-slate-500">
+                    Analisis jumlah karyawan baru masuk (New Hire) dan karyawan keluar (Turnover / Resign) beserta tren bulanan.
+                </p>
+            </div>
+
+            <!-- Year Dropdown Form -->
+            <form method="GET" action="{{ route('dashboard') }}" class="flex items-center gap-2 self-start md:self-auto">
+                <label for="yearSelect" class="text-xs font-bold text-slate-600 whitespace-nowrap">
+                    Pilih Periode Tahun:
+                </label>
+                <div class="relative">
+                    <select id="yearSelect" name="year" onchange="this.form.submit()" class="pl-3 pr-8 py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-brand-navy focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 cursor-pointer">
+                        @foreach($availableYears as $year)
+                            <option value="{{ $year }}" {{ $selectedYear == $year ? 'selected' : '' }}>
+                                Tahun {{ $year }} {{ $year == $currentYear ? '(Berjalan)' : '' }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                @if($selectedYear !== $currentYear)
+                    <a href="{{ route('dashboard') }}" class="px-3 py-2 text-xs font-semibold text-slate-500 hover:text-brand-primary bg-slate-100 rounded-xl transition" title="Kembali ke tahun berjalan">
+                        Reset ({{ $currentYear }})
+                    </a>
+                @endif
+            </form>
+        </div>
+
+        <!-- 3 High-Impact KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+            <!-- 1. New Hire Card -->
+            <div class="bg-gradient-to-br from-teal-50/80 via-emerald-50/40 to-white rounded-2xl p-5 border border-teal-100 shadow-sm relative overflow-hidden group hover:border-brand-primary transition">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-[11px] font-bold text-teal-700 uppercase tracking-wider block">
+                            Karyawan Baru Masuk
+                        </span>
+                        <span class="text-xs font-medium text-slate-400">Tahun {{ $selectedYear }}</span>
+                    </div>
+                    <div class="w-11 h-11 rounded-xl bg-brand-primary text-white flex items-center justify-center shadow-md shadow-brand-primary/20">
+                        <i class="fa-solid fa-user-plus text-base"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-baseline gap-2">
+                    <span class="text-3xl sm:text-4xl font-extrabold text-brand-navy">{{ $newHiresCount }}</span>
+                    <span class="text-xs font-bold text-slate-500">Orang</span>
+                </div>
+                <div class="mt-3 pt-3 border-t border-teal-100/60 flex items-center justify-between">
+                    <span class="text-[11px] text-teal-800 font-medium">
+                        Join Date di {{ $selectedYear }}
+                    </span>
+                    <a href="{{ route('employees.index', ['join_year' => $selectedYear]) }}" class="inline-flex items-center gap-1.5 text-xs font-bold text-brand-primary hover:text-brand-primary-hover group-hover:translate-x-0.5 transition">
+                        <span>Lihat Daftar</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 2. Karyawan Keluar / Turnover Card -->
+            <div class="bg-gradient-to-br from-rose-50/80 via-red-50/40 to-white rounded-2xl p-5 border border-rose-100 shadow-sm relative overflow-hidden group hover:border-rose-400 transition">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-[11px] font-bold text-rose-700 uppercase tracking-wider block">
+                            Karyawan Keluar (Turnover)
+                        </span>
+                        <span class="text-xs font-medium text-slate-400">Tahun {{ $selectedYear }}</span>
+                    </div>
+                    <div class="w-11 h-11 rounded-xl bg-rose-500 text-white flex items-center justify-center shadow-md shadow-rose-500/20">
+                        <i class="fa-solid fa-user-minus text-base"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-baseline gap-2">
+                    <span class="text-3xl sm:text-4xl font-extrabold text-rose-600">{{ $departuresCount }}</span>
+                    <span class="text-xs font-bold text-slate-500">Orang</span>
+                    <span class="ml-auto px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700">
+                        Rate: {{ $turnoverRate }}%
+                    </span>
+                </div>
+                <div class="mt-3 pt-3 border-t border-rose-100/60 flex items-center justify-between">
+                    <span class="text-[11px] text-rose-700 font-medium">
+                        Leave Date di {{ $selectedYear }}
+                    </span>
+                    <a href="{{ route('employees.index', ['leave_year' => $selectedYear]) }}" class="inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 hover:text-rose-700 group-hover:translate-x-0.5 transition">
+                        <span>Lihat Daftar</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 3. Net Headcount Growth Card -->
+            <div class="bg-gradient-to-br from-indigo-50/80 via-sky-50/40 to-white rounded-2xl p-5 border border-indigo-100 shadow-sm relative overflow-hidden group hover:border-indigo-400 transition">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-[11px] font-bold text-indigo-700 uppercase tracking-wider block">
+                            Pertumbuhan Bersih (Net)
+                        </span>
+                        <span class="text-xs font-medium text-slate-400">Tahun {{ $selectedYear }}</span>
+                    </div>
+                    <div class="w-11 h-11 rounded-xl {{ $netHeadcountGrowth >= 0 ? 'bg-indigo-600' : 'bg-amber-600' }} text-white flex items-center justify-center shadow-md">
+                        <i class="fa-solid {{ $netHeadcountGrowth >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }} text-base"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-baseline gap-2">
+                    <span class="text-3xl sm:text-4xl font-extrabold {{ $netHeadcountGrowth > 0 ? 'text-indigo-600' : ($netHeadcountGrowth < 0 ? 'text-rose-600' : 'text-slate-600') }}">
+                        {{ $netHeadcountGrowth > 0 ? '+' . $netHeadcountGrowth : $netHeadcountGrowth }}
+                    </span>
+                    <span class="text-xs font-bold text-slate-500">Orang</span>
+                    <span class="ml-auto px-2 py-0.5 rounded-full text-[11px] font-bold {{ $netHeadcountGrowth > 0 ? 'bg-indigo-100 text-indigo-700' : ($netHeadcountGrowth < 0 ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-700') }}">
+                        {{ $netHeadcountGrowth > 0 ? 'Bertambah' : ($netHeadcountGrowth < 0 ? 'Berkurang' : 'Stabil') }}
+                    </span>
+                </div>
+                <div class="mt-3 pt-3 border-t border-indigo-100/60 flex items-center justify-between text-[11px] text-slate-500">
+                    <span>Masuk ({{ $newHiresCount }}) vs Keluar ({{ $departuresCount }})</span>
+                    <span class="font-semibold text-slate-700">Tahun {{ $selectedYear }}</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Monthly Chart & Employee Movement Details -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
+
+            <!-- Chart Bulanan: Masuk vs Keluar -->
+            <div class="lg:col-span-7 bg-slate-50/70 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h4 class="text-xs font-bold text-brand-navy uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-chart-column text-brand-primary"></i>
+                            <span>Grafik Bulanan: Masuk vs Keluar (Tahun {{ $selectedYear }})</span>
+                        </h4>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Perbandingan jumlah karyawan baru dan turnover per bulan</p>
+                    </div>
+                    <div class="flex items-center gap-3 text-xs">
+                        <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
+                            <span class="w-3 h-3 rounded bg-brand-primary inline-block"></span>
+                            Masuk
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
+                            <span class="w-3 h-3 rounded bg-rose-500 inline-block"></span>
+                            Keluar
+                        </span>
+                    </div>
+                </div>
+
+                <div class="relative h-64 w-full">
+                    <canvas id="chartHireTurnover"></canvas>
+                </div>
+            </div>
+
+            <!-- List Tab: Detail Karyawan Masuk & Keluar -->
+            <div class="lg:col-span-5 bg-slate-50/70 p-5 rounded-2xl border border-slate-100 flex flex-col" x-data="{ tab: 'hires' }">
+                <div class="flex items-center justify-between mb-4 border-b border-slate-200 pb-2">
+                    <div class="flex items-center gap-2">
+                        <button type="button" @click="tab = 'hires'" :class="tab === 'hires' ? 'bg-white text-brand-primary font-bold shadow-sm' : 'text-slate-500 hover:text-slate-700'" class="px-3 py-1.5 rounded-xl text-xs transition">
+                            Masuk ({{ $yearNewHires->count() }})
+                        </button>
+                        <button type="button" @click="tab = 'leaves'" :class="tab === 'leaves' ? 'bg-white text-rose-600 font-bold shadow-sm' : 'text-slate-500 hover:text-slate-700'" class="px-3 py-1.5 rounded-xl text-xs transition">
+                            Keluar ({{ $yearDepartures->count() }})
+                        </button>
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-semibold uppercase">Tahun {{ $selectedYear }}</span>
+                </div>
+
+                <!-- Tab 1: Karyawan Baru -->
+                <div x-show="tab === 'hires'" class="space-y-2.5 overflow-y-auto max-h-56 pr-1">
+                    @forelse($yearNewHires as $hire)
+                    <div class="p-2.5 bg-white rounded-xl border border-slate-100 hover:border-teal-300 transition flex items-center justify-between gap-3 text-xs">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-8 h-8 rounded-lg bg-teal-50 text-brand-primary font-bold flex items-center justify-center flex-shrink-0 text-[11px]">
+                                {{ substr($hire->full_name, 0, 1) }}
+                            </div>
+                            <div class="min-w-0">
+                                <a href="{{ route('employees.show', $hire->id) }}" class="font-bold text-slate-800 hover:text-brand-primary truncate block">
+                                    {{ $hire->full_name }}
+                                </a>
+                                <p class="text-[10px] text-slate-400 truncate">{{ $hire->position }} &bull; {{ $hire->department }}</p>
+                            </div>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <span class="text-[11px] font-bold text-brand-primary block">{{ $hire->join_date ? $hire->join_date->format('d M Y') : '-' }}</span>
+                            <span class="text-[10px] text-slate-400">Tgl Masuk</span>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="text-center py-8 text-slate-400 text-xs">
+                        <i class="fa-solid fa-user-slash text-2xl mb-1 text-slate-300 block"></i>
+                        Tidak ada karyawan baru masuk pada tahun {{ $selectedYear }}.
+                    </div>
+                    @endforelse
+                </div>
+
+                <!-- Tab 2: Karyawan Keluar -->
+                <div x-show="tab === 'leaves'" x-cloak class="space-y-2.5 overflow-y-auto max-h-56 pr-1">
+                    @forelse($yearDepartures as $departure)
+                    <div class="p-2.5 bg-white rounded-xl border border-slate-100 hover:border-rose-300 transition flex items-center justify-between gap-3 text-xs">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 font-bold flex items-center justify-center flex-shrink-0 text-[11px]">
+                                {{ substr($departure->full_name, 0, 1) }}
+                            </div>
+                            <div class="min-w-0">
+                                <a href="{{ route('employees.show', $departure->id) }}" class="font-bold text-slate-800 hover:text-rose-600 truncate block">
+                                    {{ $departure->full_name }}
+                                </a>
+                                <p class="text-[10px] text-slate-400 truncate">{{ $departure->position }} &bull; {{ $departure->department }}</p>
+                            </div>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <span class="text-[11px] font-bold text-rose-600 block">{{ $departure->leave_date ? $departure->leave_date->format('d M Y') : '-' }}</span>
+                            <span class="text-[10px] text-slate-400">Tgl Keluar</span>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="text-center py-8 text-slate-400 text-xs">
+                        <i class="fa-solid fa-circle-check text-2xl mb-1 text-slate-300 block"></i>
+                        Tidak ada karyawan keluar pada tahun {{ $selectedYear }}.
+                    </div>
+                    @endforelse
+                </div>
+
+            </div>
+
+        </div>
 
     </div>
 
@@ -719,6 +966,70 @@
                             font: {
                                 size: 10
                             }
+                        }
+                    }
+                }
+            }
+        });
+
+        // 8. Chart Hire vs Turnover per Bulan (Tahun {{ $selectedYear }})
+        createDashboardChart('chartHireTurnover', {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+                datasets: [
+                    {
+                        label: 'Karyawan Baru (New Hire)',
+                        data: {!! json_encode(array_values($monthlyHires)) !!},
+                        backgroundColor: '#096256',
+                        borderRadius: 6,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.6
+                    },
+                    {
+                        label: 'Karyawan Keluar (Turnover)',
+                        data: {!! json_encode(array_values($monthlyDepartures)) !!},
+                        backgroundColor: '#f43f5e',
+                        borderRadius: 6,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y + ' orang';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 11
+                            }
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0,
+                            stepSize: 1
+                        },
+                        grid: {
+                            color: '#f1f5f9'
                         }
                     }
                 }

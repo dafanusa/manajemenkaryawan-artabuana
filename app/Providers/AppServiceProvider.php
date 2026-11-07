@@ -19,6 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Set Default Timezone and Locale (Waktu Indonesia Timur - WIT / UTC+9)
+        date_default_timezone_set(config('app.timezone', 'Asia/Jayapura'));
+        \Carbon\Carbon::setLocale(config('app.locale', 'id'));
     }
 }
