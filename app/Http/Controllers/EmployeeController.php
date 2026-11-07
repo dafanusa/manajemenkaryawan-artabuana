@@ -16,6 +16,7 @@ use App\Models\EmployeeLicense;
 use App\Models\EmployeeSalaryHistory;
 use App\Models\EmployeeSkill;
 use App\Models\WorkExperience;
+use App\Services\GoogleDriveService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -204,7 +205,9 @@ class EmployeeController extends Controller
             $rules['line_grade'] = ['nullable', 'in:Grade A,Grade B,Grade C,Grade D,Grade E,Grade F'];
             $rules['salary_level'] = ['nullable', 'in:Level 1,Level 2,Level 3,Level 4,Level 5'];
             $rules['basic_salary'] = ['nullable', 'numeric', 'min:0'];
+            $rules['daily_rate'] = ['nullable', 'numeric', 'min:0'];
             $rules['hourly_rate'] = ['nullable', 'numeric', 'min:0'];
+            $rules['salary_effective_date'] = ['nullable', 'date'];
             $rules['allowances'] = ['nullable', 'array'];
             $rules['doc_salary_slip'] = ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'];
         }
@@ -213,9 +216,20 @@ class EmployeeController extends Controller
 
         // If not super admin, strictly ensure salary fields are not present or set to 0
         if (!$isSuperAdmin) {
-            unset($validated['basic_salary'], $validated['hourly_rate'], $validated['line_grade'], $validated['salary_level'], $validated['allowances'], $validated['doc_salary_slip']);
+            unset(
+                $validated['basic_salary'],
+                $validated['daily_rate'],
+                $validated['hourly_rate'],
+                $validated['salary_effective_date'],
+                $validated['line_grade'],
+                $validated['salary_level'],
+                $validated['allowances'],
+                $validated['doc_salary_slip']
+            );
             $validated['basic_salary'] = 0;
+            $validated['daily_rate'] = 0;
             $validated['hourly_rate'] = 0;
+            $validated['salary_effective_date'] = null;
             $validated['line_grade'] = null;
             $validated['salary_level'] = null;
         }
@@ -258,26 +272,12 @@ class EmployeeController extends Controller
                 if ($request->hasFile($inputKey)) {
                     $file = $request->file($inputKey);
                     $path = $file->store('employees/documents/' . $type, 'public');
-                    EmployeeDocument::create([
-                        'employee_id' => $employee->id,
-                        'document_type' => $type,
-                        'file_path' => $path,
-                        'original_name' => $file->getClientOriginalName(),
-                        'file_size' => $file->getSize(),
-                        'mime_type' => $file->getClientMimeType(),
-                    ]);
+                    $this->saveAndSyncDocument($employee, $type, $file, $path);
                 }
             }
 
-            if (!empty($validated['photo'])) {
-                EmployeeDocument::create([
-                    'employee_id' => $employee->id,
-                    'document_type' => 'photo',
-                    'file_path' => $validated['photo'],
-                    'original_name' => $request->file('photo')->getClientOriginalName(),
-                    'file_size' => $request->file('photo')->getSize(),
-                    'mime_type' => $request->file('photo')->getClientMimeType(),
-                ]);
+            if (!empty($validated['photo']) && $request->hasFile('photo')) {
+                $this->saveAndSyncDocument($employee, 'photo', $request->file('photo'), $validated['photo']);
             }
 
             // Emergency Contacts
@@ -300,14 +300,7 @@ class EmployeeController extends Controller
                         if ($request->hasFile("educations.{$idx}.document")) {
                             $f = $request->file("educations.{$idx}.document");
                             $docPath = $f->store('employees/documents/education', 'public');
-                            EmployeeDocument::create([
-                                'employee_id' => $employee->id,
-                                'document_type' => 'ijazah_' . strtolower($edu['level'] ?? 'edu'),
-                                'file_path' => $docPath,
-                                'original_name' => $f->getClientOriginalName(),
-                                'file_size' => $f->getSize(),
-                                'mime_type' => $f->getClientMimeType(),
-                            ]);
+                            $this->saveAndSyncDocument($employee, 'ijazah_' . strtolower($edu['level'] ?? 'edu'), $f, $docPath);
                         }
 
                         EmployeeEducation::create([
@@ -331,14 +324,7 @@ class EmployeeController extends Controller
                         if ($request->hasFile("work_experiences.{$idx}.document")) {
                             $f = $request->file("work_experiences.{$idx}.document");
                             $docPath = $f->store('employees/documents/experience', 'public');
-                            EmployeeDocument::create([
-                                'employee_id' => $employee->id,
-                                'document_type' => 'pengalaman_kerja',
-                                'file_path' => $docPath,
-                                'original_name' => $f->getClientOriginalName(),
-                                'file_size' => $f->getSize(),
-                                'mime_type' => $f->getClientMimeType(),
-                            ]);
+                            $this->saveAndSyncDocument($employee, 'pengalaman_kerja', $f, $docPath);
                         }
 
                         WorkExperience::create([
@@ -361,14 +347,7 @@ class EmployeeController extends Controller
                         if ($request->hasFile("certificates.{$idx}.document")) {
                             $f = $request->file("certificates.{$idx}.document");
                             $docPath = $f->store('employees/documents/certificate', 'public');
-                            EmployeeDocument::create([
-                                'employee_id' => $employee->id,
-                                'document_type' => 'sertifikat',
-                                'file_path' => $docPath,
-                                'original_name' => $f->getClientOriginalName(),
-                                'file_size' => $f->getSize(),
-                                'mime_type' => $f->getClientMimeType(),
-                            ]);
+                            $this->saveAndSyncDocument($employee, 'sertifikat', $f, $docPath);
                         }
 
                         EmployeeCertificate::create([
@@ -404,14 +383,7 @@ class EmployeeController extends Controller
                         if ($request->hasFile("contracts.{$idx}.document")) {
                             $f = $request->file("contracts.{$idx}.document");
                             $docPath = $f->store('employees/documents/contracts', 'public');
-                            EmployeeDocument::create([
-                                'employee_id' => $employee->id,
-                                'document_type' => 'kontrak_kerja',
-                                'file_path' => $docPath,
-                                'original_name' => $f->getClientOriginalName(),
-                                'file_size' => $f->getSize(),
-                                'mime_type' => $f->getClientMimeType(),
-                            ]);
+                            $this->saveAndSyncDocument($employee, 'kontrak_kerja', $f, $docPath);
                         }
 
                         EmployeeContract::create([
@@ -439,14 +411,7 @@ class EmployeeController extends Controller
                         if ($request->hasFile("licenses.{$idx}.document")) {
                             $f = $request->file("licenses.{$idx}.document");
                             $docPath = $f->store('employees/documents/licenses', 'public');
-                            EmployeeDocument::create([
-                                'employee_id' => $employee->id,
-                                'document_type' => 'sim_license',
-                                'file_path' => $docPath,
-                                'original_name' => $f->getClientOriginalName(),
-                                'file_size' => $f->getSize(),
-                                'mime_type' => $f->getClientMimeType(),
-                            ]);
+                            $this->saveAndSyncDocument($employee, 'sim_license', $f, $docPath);
                         }
 
                         EmployeeLicense::create([
@@ -470,14 +435,7 @@ class EmployeeController extends Controller
                         if ($request->hasFile("leaves.{$idx}.document")) {
                             $f = $request->file("leaves.{$idx}.document");
                             $docPath = $f->store('employees/documents/leaves', 'public');
-                            EmployeeDocument::create([
-                                'employee_id' => $employee->id,
-                                'document_type' => 'leave_form',
-                                'file_path' => $docPath,
-                                'original_name' => $f->getClientOriginalName(),
-                                'file_size' => $f->getSize(),
-                                'mime_type' => $f->getClientMimeType(),
-                            ]);
+                            $this->saveAndSyncDocument($employee, 'leave_form', $f, $docPath);
                         }
 
                         $startDate = $leaveData['leave_start_date'];
@@ -524,23 +482,26 @@ class EmployeeController extends Controller
                     }
                 }
 
-                if (!empty($validated['basic_salary']) || !empty($validated['line_grade'])) {
-                    $joinYear = $employee->join_date ? $employee->join_date->format('Y') : date('Y');
+                if (!empty($validated['basic_salary']) || !empty($validated['line_grade']) || !empty($validated['daily_rate'])) {
+                    $effectiveDate = $validated['salary_effective_date'] ?? ($employee->join_date ? $employee->join_date->format('Y-m-d') : date('Y-m-d'));
+                    $joinYear = date('Y', strtotime($effectiveDate));
                     EmployeeSalaryHistory::create([
                         'employee_id' => $employee->id,
                         'line_grade' => $validated['line_grade'] ?? 'Grade A',
                         'salary_level' => $validated['salary_level'] ?? 'Level 1',
                         'basic_salary' => $validated['basic_salary'] ?? 0,
+                        'daily_rate' => $validated['daily_rate'] ?? 0,
                         'hourly_rate' => $validated['hourly_rate'] ?? 0,
                         'allowances_total' => $totalAllowances,
                         'allowances_detail' => $allowanceDetails,
-                        'start_date' => $employee->join_date ?? now(),
+                        'start_date' => $effectiveDate,
                         'end_date' => null,
                         'period' => $joinYear . '–Sekarang',
                         'notes' => 'Gaji Awal Masuk',
                         'is_current' => true,
                         'created_by' => Auth::id(),
                     ]);
+                    $employee->update(['salary_effective_date' => $effectiveDate]);
                 }
             }
 
@@ -587,14 +548,19 @@ class EmployeeController extends Controller
 
         // If not super admin, protect sensitive salary fields at backend level
         if (!$isSuperAdmin) {
-            $employee->makeHidden(['basic_salary', 'hourly_rate', 'line_grade', 'salary_level']);
+            $employee->makeHidden(['basic_salary', 'daily_rate', 'hourly_rate', 'salary_effective_date', 'line_grade', 'salary_level']);
             $employee->basic_salary = null;
+            $employee->daily_rate = null;
             $employee->hourly_rate = null;
+            $employee->salary_effective_date = null;
             $employee->line_grade = null;
             $employee->salary_level = null;
         }
 
-        return view('employees.show', compact('employee', 'isSuperAdmin'));
+        $grades = ['Grade A', 'Grade B', 'Grade C', 'Grade D', 'Grade E', 'Grade F'];
+        $levels = ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5'];
+
+        return view('employees.show', compact('employee', 'isSuperAdmin', 'grades', 'levels'));
     }
 
     public function print(Employee $employee)
@@ -622,9 +588,11 @@ class EmployeeController extends Controller
         $employee->load($relations);
 
         if (!$isSuperAdmin) {
-            $employee->makeHidden(['basic_salary', 'hourly_rate', 'line_grade', 'salary_level']);
+            $employee->makeHidden(['basic_salary', 'daily_rate', 'hourly_rate', 'salary_effective_date', 'line_grade', 'salary_level']);
             $employee->basic_salary = null;
+            $employee->daily_rate = null;
             $employee->hourly_rate = null;
+            $employee->salary_effective_date = null;
             $employee->line_grade = null;
             $employee->salary_level = null;
         }
@@ -657,9 +625,11 @@ class EmployeeController extends Controller
         $employee->load($relations);
 
         if (!$isSuperAdmin) {
-            $employee->makeHidden(['basic_salary', 'hourly_rate', 'line_grade', 'salary_level']);
+            $employee->makeHidden(['basic_salary', 'daily_rate', 'hourly_rate', 'salary_effective_date', 'line_grade', 'salary_level']);
             $employee->basic_salary = null;
+            $employee->daily_rate = null;
             $employee->hourly_rate = null;
+            $employee->salary_effective_date = null;
             $employee->line_grade = null;
             $employee->salary_level = null;
         }
@@ -755,11 +725,12 @@ class EmployeeController extends Controller
             $rules['line_grade'] = ['nullable', 'in:Grade A,Grade B,Grade C,Grade D,Grade E,Grade F'];
             $rules['salary_level'] = ['nullable', 'in:Level 1,Level 2,Level 3,Level 4,Level 5'];
             $rules['basic_salary'] = ['nullable', 'numeric', 'min:0'];
+            $rules['daily_rate'] = ['nullable', 'numeric', 'min:0'];
             $rules['hourly_rate'] = ['nullable', 'numeric', 'min:0'];
-            $rules['allowances'] = ['nullable', 'array'];
-            $rules['doc_salary_slip'] = ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'];
             $rules['salary_effective_date'] = ['nullable', 'date'];
             $rules['salary_change_notes'] = ['nullable', 'string', 'max:500'];
+            $rules['allowances'] = ['nullable', 'array'];
+            $rules['doc_salary_slip'] = ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'];
         }
 
         $validated = $request->validate($rules);
@@ -768,6 +739,7 @@ class EmployeeController extends Controller
         if (!$isSuperAdmin) {
             unset(
                 $validated['basic_salary'],
+                $validated['daily_rate'],
                 $validated['hourly_rate'],
                 $validated['line_grade'],
                 $validated['salary_level'],
@@ -794,15 +766,7 @@ class EmployeeController extends Controller
                 $photoPath = $request->file('photo')->store('employees/photos', 'public');
                 $validated['photo'] = $photoPath;
 
-                EmployeeDocument::updateOrCreate(
-                    ['employee_id' => $employee->id, 'document_type' => 'photo'],
-                    [
-                        'file_path' => $photoPath,
-                        'original_name' => $request->file('photo')->getClientOriginalName(),
-                        'file_size' => $request->file('photo')->getSize(),
-                        'mime_type' => $request->file('photo')->getClientMimeType(),
-                    ]
-                );
+                $this->updateOrSyncDocument($employee, 'photo', $request->file('photo'), $photoPath);
             }
 
             // Documents upload with safe file replacement
@@ -833,31 +797,25 @@ class EmployeeController extends Controller
                         Storage::disk('public')->delete($oldDoc->file_path);
                     }
 
-                    EmployeeDocument::updateOrCreate(
-                        ['employee_id' => $employee->id, 'document_type' => $type],
-                        [
-                            'file_path' => $path,
-                            'original_name' => $file->getClientOriginalName(),
-                            'file_size' => $file->getSize(),
-                            'mime_type' => $file->getClientMimeType(),
-                        ]
-                    );
+                    $this->updateOrSyncDocument($employee, $type, $file, $path);
                 }
             }
 
             // Salary & Histori tracking for Super Admin
             if ($isSuperAdmin) {
                 $newBasic = (float)($validated['basic_salary'] ?? 0);
+                $newDaily = (float)($validated['daily_rate'] ?? 0);
                 $newHourly = (float)($validated['hourly_rate'] ?? 0);
                 $newGrade = $validated['line_grade'] ?? null;
                 $newLevel = $validated['salary_level'] ?? null;
 
                 $oldBasic = (float)$employee->basic_salary;
+                $oldDaily = (float)$employee->daily_rate;
                 $oldHourly = (float)$employee->hourly_rate;
                 $oldGrade = $employee->line_grade;
                 $oldLevel = $employee->salary_level;
 
-                $salaryChanged = ($newBasic != $oldBasic || $newHourly != $oldHourly || $newGrade != $oldGrade || $newLevel != $oldLevel);
+                $salaryChanged = ($newBasic != $oldBasic || $newDaily != $oldDaily || $newHourly != $oldHourly || $newGrade != $oldGrade || $newLevel != $oldLevel);
 
                 // Sync allowances
                 $totalAllowances = 0;
@@ -907,6 +865,7 @@ class EmployeeController extends Controller
                         'line_grade' => $newGrade,
                         'salary_level' => $newLevel,
                         'basic_salary' => $newBasic,
+                        'daily_rate' => $newDaily,
                         'hourly_rate' => $newHourly,
                         'allowances_total' => $totalAllowances,
                         'allowances_detail' => $allowanceDetails,
@@ -917,6 +876,7 @@ class EmployeeController extends Controller
                         'is_current' => true,
                         'created_by' => Auth::id(),
                     ]);
+                    $validated['salary_effective_date'] = $effectiveDate;
                 }
             }
 
@@ -949,14 +909,7 @@ class EmployeeController extends Controller
                             }
                             $f = $request->file("educations.{$idx}.document");
                             $docPath = $f->store('employees/documents/education', 'public');
-                            EmployeeDocument::create([
-                                'employee_id' => $employee->id,
-                                'document_type' => 'ijazah_' . strtolower($edu['level'] ?? 'edu'),
-                                'file_path' => $docPath,
-                                'original_name' => $f->getClientOriginalName(),
-                                'file_size' => $f->getSize(),
-                                'mime_type' => $f->getClientMimeType(),
-                            ]);
+                            $this->saveAndSyncDocument($employee, 'ijazah_' . strtolower($edu['level'] ?? 'edu'), $f, $docPath);
                         }
 
                         EmployeeEducation::create([
@@ -984,14 +937,7 @@ class EmployeeController extends Controller
                             }
                             $f = $request->file("work_experiences.{$idx}.document");
                             $docPath = $f->store('employees/documents/experience', 'public');
-                            EmployeeDocument::create([
-                                'employee_id' => $employee->id,
-                                'document_type' => 'pengalaman_kerja',
-                                'file_path' => $docPath,
-                                'original_name' => $f->getClientOriginalName(),
-                                'file_size' => $f->getSize(),
-                                'mime_type' => $f->getClientMimeType(),
-                            ]);
+                            $this->saveAndSyncDocument($employee, 'pengalaman_kerja', $f, $docPath);
                         }
 
                         WorkExperience::create([
@@ -1018,14 +964,7 @@ class EmployeeController extends Controller
                             }
                             $f = $request->file("certificates.{$idx}.document");
                             $docPath = $f->store('employees/documents/certificate', 'public');
-                            EmployeeDocument::create([
-                                'employee_id' => $employee->id,
-                                'document_type' => 'sertifikat',
-                                'file_path' => $docPath,
-                                'original_name' => $f->getClientOriginalName(),
-                                'file_size' => $f->getSize(),
-                                'mime_type' => $f->getClientMimeType(),
-                            ]);
+                            $this->saveAndSyncDocument($employee, 'sertifikat', $f, $docPath);
                         }
 
                         EmployeeCertificate::create([
@@ -1066,14 +1005,7 @@ class EmployeeController extends Controller
                             }
                             $f = $request->file("contracts.{$idx}.document");
                             $docPath = $f->store('employees/documents/contracts', 'public');
-                            EmployeeDocument::create([
-                                'employee_id' => $employee->id,
-                                'document_type' => 'kontrak_kerja',
-                                'file_path' => $docPath,
-                                'original_name' => $f->getClientOriginalName(),
-                                'file_size' => $f->getSize(),
-                                'mime_type' => $f->getClientMimeType(),
-                            ]);
+                            $this->saveAndSyncDocument($employee, 'kontrak_kerja', $f, $docPath);
                         }
 
                         EmployeeContract::create([
@@ -1105,14 +1037,7 @@ class EmployeeController extends Controller
                             }
                             $f = $request->file("licenses.{$idx}.document");
                             $docPath = $f->store('employees/documents/licenses', 'public');
-                            EmployeeDocument::create([
-                                'employee_id' => $employee->id,
-                                'document_type' => 'sim_license',
-                                'file_path' => $docPath,
-                                'original_name' => $f->getClientOriginalName(),
-                                'file_size' => $f->getSize(),
-                                'mime_type' => $f->getClientMimeType(),
-                            ]);
+                            $this->saveAndSyncDocument($employee, 'sim_license', $f, $docPath);
                         }
 
                         EmployeeLicense::create([
@@ -1140,14 +1065,7 @@ class EmployeeController extends Controller
                             }
                             $f = $request->file("leaves.{$idx}.document");
                             $docPath = $f->store('employees/documents/leaves', 'public');
-                            EmployeeDocument::create([
-                                'employee_id' => $employee->id,
-                                'document_type' => 'leave_form',
-                                'file_path' => $docPath,
-                                'original_name' => $f->getClientOriginalName(),
-                                'file_size' => $f->getSize(),
-                                'mime_type' => $f->getClientMimeType(),
-                            ]);
+                            $this->saveAndSyncDocument($employee, 'leave_form', $f, $docPath);
                         }
 
                         $startDate = $leaveData['leave_start_date'];
@@ -1325,7 +1243,9 @@ class EmployeeController extends Controller
                 $headerCols[] = 'Grade';
                 $headerCols[] = 'Level';
                 $headerCols[] = 'Gaji Pokok';
+                $headerCols[] = 'Gaji Harian';
                 $headerCols[] = 'Gaji Per Jam';
+                $headerCols[] = 'Tgl Berlaku Gaji';
             }
 
             $headerCols = array_merge($headerCols, [
@@ -1365,7 +1285,9 @@ class EmployeeController extends Controller
                     $row[] = $emp->line_grade ?? '-';
                     $row[] = $emp->salary_level ?? '-';
                     $row[] = $emp->basic_salary;
+                    $row[] = $emp->daily_rate;
                     $row[] = $emp->hourly_rate;
+                    $row[] = $emp->salary_effective_date ? $emp->salary_effective_date->format('d/m/Y') : '-';
                 }
 
                 $row[] = $emp->npwp_number;
@@ -1407,6 +1329,7 @@ class EmployeeController extends Controller
             'line_grade' => ['required', 'string'],
             'salary_level' => ['required', 'string'],
             'basic_salary' => ['required', 'numeric', 'min:0'],
+            'daily_rate' => ['nullable', 'numeric', 'min:0'],
             'hourly_rate' => ['nullable', 'numeric', 'min:0'],
             'start_date' => ['required', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
@@ -1415,6 +1338,8 @@ class EmployeeController extends Controller
         ]);
 
         $effectiveDate = $validated['start_date'];
+        $dailyRate = (float)($validated['daily_rate'] ?? 0);
+        $hourlyRate = (float)($validated['hourly_rate'] ?? 0);
 
         // Close old current history if setting a new current one
         if (empty($validated['end_date'])) {
@@ -1431,7 +1356,7 @@ class EmployeeController extends Controller
         }
 
         $year = date('Y', strtotime($effectiveDate));
-        $period = $validated['period'] ?: (empty($validated['end_date']) ? "{$year}–Sekarang" : "{$year}–" . date('Y', strtotime($validated['end_date'])));
+        $period = ($validated['period'] ?? null) ?: (empty($validated['end_date']) ? "{$year}–Sekarang" : "{$year}–" . date('Y', strtotime($validated['end_date'])));
 
         $allowanceDetails = $employee->allowances->map(function ($a) {
             return [
@@ -1446,13 +1371,14 @@ class EmployeeController extends Controller
             'line_grade' => $validated['line_grade'],
             'salary_level' => $validated['salary_level'],
             'basic_salary' => $validated['basic_salary'],
-            'hourly_rate' => $validated['hourly_rate'] ?? 0,
+            'daily_rate' => $dailyRate,
+            'hourly_rate' => $hourlyRate,
             'allowances_total' => $employee->allowances->sum('amount'),
             'allowances_detail' => $allowanceDetails,
             'start_date' => $effectiveDate,
             'end_date' => $validated['end_date'] ?? null,
             'period' => $period,
-            'notes' => $validated['notes'] ?: 'Penetapan Perubahan Gaji',
+            'notes' => ($validated['notes'] ?? null) ?: 'Penetapan Perubahan Gaji',
             'is_current' => empty($validated['end_date']),
             'created_by' => Auth::id(),
         ]);
@@ -1462,13 +1388,15 @@ class EmployeeController extends Controller
                 'line_grade' => $validated['line_grade'],
                 'salary_level' => $validated['salary_level'],
                 'basic_salary' => $validated['basic_salary'],
-                'hourly_rate' => $validated['hourly_rate'] ?? 0,
+                'daily_rate' => $dailyRate,
+                'hourly_rate' => $hourlyRate,
+                'salary_effective_date' => $effectiveDate,
             ]);
         }
 
         ActivityLog::record(
             'update_gaji',
-            "Mencatat riwayat gaji baru untuk {$employee->full_name} ({$employee->employee_id}): {$validated['line_grade']} / {$validated['salary_level']}, Rp " . number_format($validated['basic_salary'], 0, ',', '.'),
+            "Mencatat riwayat gaji baru untuk {$employee->full_name} ({$employee->employee_id}): {$validated['line_grade']} / {$validated['salary_level']}, Pokok: Rp " . number_format($validated['basic_salary'], 0, ',', '.') . ", Harian: Rp " . number_format($dailyRate, 0, ',', '.') . ", Berlaku: " . date('d/m/Y', strtotime($effectiveDate)),
             'Employee',
             $employee->id
         );
@@ -1494,11 +1422,70 @@ class EmployeeController extends Controller
                     'line_grade' => $latest->line_grade,
                     'salary_level' => $latest->salary_level,
                     'basic_salary' => $latest->basic_salary,
-                    'hourly_rate' => $latest->hourly_rate,
+                    'daily_rate' => $latest->daily_rate ?? 0,
+                    'hourly_rate' => $latest->hourly_rate ?? 0,
+                    'salary_effective_date' => $latest->start_date,
                 ]);
             }
         }
 
         return back()->with('success', 'Riwayat gaji berhasil dihapus.');
+    }
+
+    /**
+     * Upload document to Google Drive and save record in database.
+     */
+    protected function saveAndSyncDocument(Employee $employee, string $documentType, $file, string $path): EmployeeDocument
+    {
+        $gdriveUpload = null;
+        try {
+            $gdriveUpload = app(GoogleDriveService::class)->uploadEmployeeDocument($employee, $documentType, $file);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Gdrive upload skipped/failed: " . $e->getMessage());
+        }
+
+        $origName = $file instanceof \Illuminate\Http\UploadedFile ? $file->getClientOriginalName() : basename($path);
+        $fileSize = $file instanceof \Illuminate\Http\UploadedFile ? $file->getSize() : (Storage::disk('public')->exists($path) ? Storage::disk('public')->size($path) : null);
+        $mimeType = $file instanceof \Illuminate\Http\UploadedFile ? $file->getClientMimeType() : (Storage::disk('public')->exists($path) ? Storage::disk('public')->mimeType($path) : null);
+
+        return EmployeeDocument::create([
+            'employee_id' => $employee->id,
+            'document_type' => $documentType,
+            'file_path' => $path,
+            'original_name' => $origName,
+            'file_size' => $fileSize,
+            'mime_type' => $mimeType,
+            'google_drive_file_id' => $gdriveUpload['file_id'] ?? null,
+            'google_drive_url' => $gdriveUpload['web_view_link'] ?? null,
+        ]);
+    }
+
+    /**
+     * Upload document to Google Drive and update/create record in database.
+     */
+    protected function updateOrSyncDocument(Employee $employee, string $documentType, $file, string $path): EmployeeDocument
+    {
+        $gdriveUpload = null;
+        try {
+            $gdriveUpload = app(GoogleDriveService::class)->uploadEmployeeDocument($employee, $documentType, $file);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Gdrive update skipped/failed: " . $e->getMessage());
+        }
+
+        $origName = $file instanceof \Illuminate\Http\UploadedFile ? $file->getClientOriginalName() : basename($path);
+        $fileSize = $file instanceof \Illuminate\Http\UploadedFile ? $file->getSize() : (Storage::disk('public')->exists($path) ? Storage::disk('public')->size($path) : null);
+        $mimeType = $file instanceof \Illuminate\Http\UploadedFile ? $file->getClientMimeType() : (Storage::disk('public')->exists($path) ? Storage::disk('public')->mimeType($path) : null);
+
+        return EmployeeDocument::updateOrCreate(
+            ['employee_id' => $employee->id, 'document_type' => $documentType],
+            [
+                'file_path' => $path,
+                'original_name' => $origName,
+                'file_size' => $fileSize,
+                'mime_type' => $mimeType,
+                'google_drive_file_id' => $gdriveUpload['file_id'] ?? null,
+                'google_drive_url' => $gdriveUpload['web_view_link'] ?? null,
+            ]
+        );
     }
 }

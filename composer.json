@@ -7,6 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "google/apiclient": "2.15.0",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1"
     },
@@ -23,8 +24,14 @@
         "psr-4": {
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
-            "Database\\Seeders\\": "database/seeders/"
-        }
+            "Database\\Seeders\\": "database/seeders/",
+            "Google\\Service\\": "vendor/google/apiclient-services/src/",
+            "phpseclib3\\": "vendor/phpseclib/phpseclib/phpseclib/"
+        },
+        "files": [
+            "vendor/google/apiclient-services/autoload.php",
+            "vendor/phpseclib/phpseclib/phpseclib/bootstrap.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
@@ -70,7 +77,10 @@
     "extra": {
         "laravel": {
             "dont-discover": []
-        }
+        },
+        "google/apiclient-services": [
+            "Drive"
+        ]
     },
     "config": {
         "optimize-autoloader": true,

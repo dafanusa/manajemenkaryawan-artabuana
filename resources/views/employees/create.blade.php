@@ -1310,13 +1310,25 @@
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">
                         Gaji Pokok (Rp) <span class="text-red-500">*</span>
                     </label>
-                    <input type="number" step="1000" min="0" name="basic_salary" value="{{ old('basic_salary', 0) }}" placeholder="Contoh: 15000000" class="w-full py-2.5 px-3.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-primary font-mono font-bold text-slate-800">
+                    <input type="number" step="any" min="0" name="basic_salary" value="{{ old('basic_salary', 0) }}" placeholder="Contoh: 15000000" class="w-full py-2.5 px-3.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-primary font-mono font-bold text-slate-800">
+                </div>
+
+                <!-- Gaji Harian -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Gaji Harian (Rp)</label>
+                    <input type="number" step="any" min="0" name="daily_rate" value="{{ old('daily_rate', 0) }}" placeholder="Contoh: 350000" class="w-full py-2.5 px-3.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-primary font-mono font-bold text-slate-800">
                 </div>
 
                 <!-- Gaji Per Jam -->
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">Gaji Per Jam (Rp)</label>
-                    <input type="number" step="100" min="0" name="hourly_rate" value="{{ old('hourly_rate', 0) }}" placeholder="Contoh: 85000" class="w-full py-2.5 px-3.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-primary font-mono font-bold text-slate-800">
+                    <input type="number" step="any" min="0" name="hourly_rate" value="{{ old('hourly_rate', 0) }}" placeholder="Contoh: 85000" class="w-full py-2.5 px-3.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-primary font-mono font-bold text-slate-800">
+                </div>
+
+                <!-- Tanggal Mulai Berlaku -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Tanggal Mulai Berlaku</label>
+                    <input type="date" name="salary_effective_date" value="{{ old('salary_effective_date', date('Y-m-d')) }}" class="w-full py-2.5 px-3.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-primary text-slate-800">
                 </div>
 
                 <!-- Posisi Saat Ini -->
@@ -1375,7 +1387,7 @@
 
                             <div>
                                 <label class="block font-bold text-slate-600 mb-1">Nominal (Rp/Bulan)</label>
-                                <input type="number" step="1000" min="0" :name="`allowances[${idx}][amount]`" x-model="alw.amount" class="w-full p-2 rounded-xl border border-slate-200 font-mono">
+                                <input type="number" step="any" min="0" :name="`allowances[${idx}][amount]`" x-model="alw.amount" class="w-full p-2 rounded-xl border border-slate-200 font-mono">
                             </div>
 
                             <div class="flex items-center gap-2">
@@ -1538,7 +1550,7 @@
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Nama HRD / Pemeriksa</label>
-                        <input type="text" name="hrd_signature_name" value="{{ old('hrd_signature_name', Auth::user()->name) }}" placeholder="Nama petugas pemeriksa..." class="w-full py-2 px-3 rounded-xl border border-slate-200 text-xs">
+                        <input type="text" name="hrd_signature_name" value="{{ old('hrd_signature_name', 'HR, Admin Manager') }}" placeholder="HR, Admin Manager" class="w-full py-2 px-3 rounded-xl border border-slate-200 text-xs">
                     </div>
 
                     <div>

@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="{{ asset('images/logo-icon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -19,21 +19,108 @@
             color: #1e293b;
         }
 
+        /* PRINT / PDF EXPORT PAGINATION RULES */
         @media print {
             body {
                 background: white !important;
-                color: black !important;
+                color: #1e293b !important;
                 padding: 0 !important;
+                margin: 0 !important;
             }
+
             .no-print {
                 display: none !important;
             }
-            .page-break {
-                page-break-before: always;
-            }
+
             @page {
-                size: A4;
+                size: A4 portrait;
                 margin: 10mm 12mm 10mm 12mm;
+            }
+
+            /* Container reset - use full page margins cleanly */
+            .print-container {
+                max-width: 100% !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                background: transparent !important;
+            }
+
+            /* Kop Header */
+            .print-header {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+                break-after: avoid !important;
+                page-break-after: avoid !important;
+            }
+
+            /* Setiap bagian/poin diperlakukan sebagai satu blok konten */
+            .print-section {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                -webkit-column-break-inside: avoid;
+            }
+
+            /* Judul bagian TIDAK BOLEH terpisah dari kontennya (mencegah orphan header) */
+            .print-section-header {
+                break-after: avoid !important;
+                page-break-after: avoid !important;
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            /* Card dan Grid di dalam bagian */
+            .print-card,
+            .print-grid {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            /* Tabel: cegah baris terpotong & ulangi thead saat halaman berlanjut */
+            table {
+                border-collapse: collapse !important;
+                width: 100% !important;
+            }
+
+            thead {
+                display: table-header-group !important;
+                break-after: avoid !important;
+                page-break-after: avoid !important;
+            }
+
+            thead th {
+                background-color: #f1f5f9 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            tr {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            tbody {
+                break-inside: auto !important;
+            }
+
+            /* Tanda Tangan: harus selalu utuh dan bersama pernyataannya */
+            .print-signature-section {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            .print-footer {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            /* Pastikan warna latar belakang dan teks resmi tercetak presisi */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
         }
     </style>
@@ -55,33 +142,33 @@
     </div>
 
     <!-- PRINT CONTAINER (A4 COMPATIBLE) -->
-    <div class="max-w-4xl mx-auto bg-white p-8 sm:p-10 shadow-lg border border-slate-200 rounded-2xl space-y-4 text-[10.5px] leading-tight text-slate-800">
+    <div class="print-container max-w-4xl mx-auto bg-white p-8 sm:p-10 shadow-lg border border-slate-200 rounded-2xl space-y-3.5 text-[10.5px] leading-tight text-slate-800">
 
-        <!-- HEADER KOP RESMI PERUSAHAAN -->
-        <div class="border-b-2 border-[#2A3956] pb-4 flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <img src="{{ asset('images/logo.png') }}" alt="Logo PT ABP" class="h-14 object-contain">
-                <div>
-                    <h1 class="text-lg font-black text-[#2A3956] tracking-tight">PT ARTHA BUANA PRIMACORAL</h1>
-                    <p class="text-[10px] text-[#096256] font-bold uppercase tracking-wider">Mining Services, General Contractor & Heavy Equipment Fleet</p>
-                    <p class="text-[9px] text-slate-500">Timika Base &bull; Highland Mile 68 / Lowland Operations &bull; Papua Tengah</p>
-                </div>
+        <!-- HEADER KOP RESMI PERUSAHAAN (SESUAI REVISI #1) -->
+        <div class="border-b-2 border-[#2A3956] pb-3.5 flex items-center justify-between print-header">
+            <!-- Logo Perusahaan Proporsional (Teks samping dihapus karena sudah ada di logo) -->
+            <div class="flex items-center">
+                <img src="{{ asset('images/logo.png') }}" alt="PT Artha Buana Primacoral" class="h-11 max-h-12 w-auto object-contain">
             </div>
+
+            <!-- Kotak Judul Formulir HRD Lebih Menonjol dan Jelas -->
             <div class="text-right">
-                <span class="text-[9px] font-bold uppercase text-slate-400 block">Formulir HRD</span>
-                <span class="text-xs font-extrabold text-[#2A3956] block">FORM BIODATA KARYAWAN</span>
-                <span class="text-[10px] font-mono text-[#096256] font-bold">ID: {{ $employee->employee_id }}</span>
+                <div class="inline-block border-2 border-[#2A3956] bg-slate-50/90 px-4 py-2 rounded-xl text-right shadow-sm">
+                    <span class="text-[9.5px] font-black uppercase tracking-widest text-[#096256] block">FORMULIR HRD</span>
+                    <span class="text-sm sm:text-base font-black text-[#2A3956] tracking-tight block leading-tight">FORM BIODATA KARYAWAN</span>
+                    <span class="text-[10px] font-mono text-slate-500 font-bold block mt-0.5">ID: {{ $employee->employee_id }}</span>
+                </div>
             </div>
         </div>
 
         <!-- A. DATA PRIBADI -->
-        <div class="space-y-1.5">
-            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px] flex justify-between">
+        <div class="space-y-1.5 print-section">
+            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px] flex justify-between print-section-header">
                 <span>A. DATA PRIBADI</span>
                 <span class="font-mono text-[9px] text-teal-200">Status: {{ $employee->employment_status }}</span>
             </div>
 
-            <div class="flex gap-4 items-start">
+            <div class="flex gap-4 items-start print-card">
                 <div class="w-24 h-32 rounded border border-slate-300 overflow-hidden flex-shrink-0 bg-slate-100 flex items-center justify-center">
                     @if($employee->photo)
                     <img src="{{ asset('storage/' . $employee->photo) }}" alt="Foto" class="w-full h-full object-cover">
@@ -144,12 +231,12 @@
         </div>
 
         <!-- B. KONTAK DARURAT -->
-        <div class="space-y-1">
-            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px]">
+        <div class="space-y-1 print-section">
+            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px] print-section-header">
                 B. KONTAK DARURAT / EMERGENCY CONTACT
             </div>
             @php $c = $employee->emergencyContacts->first(); @endphp
-            <div class="grid grid-cols-2 gap-x-4 gap-y-1">
+            <div class="grid grid-cols-2 gap-x-4 gap-y-1 print-card">
                 <div class="flex border-b border-slate-100 pb-0.5">
                     <span class="w-32 font-semibold text-slate-600">Nama Kontak</span>
                     <span class="font-medium">: {{ $c->name ?? '-' }}</span>
@@ -174,8 +261,8 @@
         </div>
 
         <!-- C. PENDIDIKAN -->
-        <div class="space-y-1">
-            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px]">
+        <div class="space-y-1 print-section">
+            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px] print-section-header">
                 C. RIWAYAT PENDIDIKAN TERAKHIR
             </div>
             <table class="w-full text-left border border-slate-300">
@@ -205,8 +292,8 @@
         </div>
 
         <!-- D. PENGALAMAN KERJA -->
-        <div class="space-y-1">
-            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px]">
+        <div class="space-y-1 print-section">
+            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px] print-section-header">
                 D. PENGALAMAN KERJA TERAKHIR
             </div>
             <table class="w-full text-left border border-slate-300">
@@ -234,11 +321,11 @@
         </div>
 
         <!-- E. KEAHLIAN & SERTIFIKAT -->
-        <div class="space-y-1">
-            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px]">
+        <div class="space-y-1 print-section">
+            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px] print-section-header">
                 E. KEAHLIAN & SERTIFIKAT KOMPETENSI
             </div>
-            <div class="grid grid-cols-2 gap-3 border border-slate-200 p-2 rounded">
+            <div class="grid grid-cols-2 gap-3 border border-slate-200 p-2 rounded print-card">
                 <div>
                     <p><strong>Keahlian Utama:</strong> {{ $employee->skills_summary ?? '-' }}</p>
                     <p><strong>Alat/Software:</strong> {{ $employee->tools_software ?? '-' }}</p>
@@ -278,27 +365,107 @@
             @endif
         </div>
 
-        <!-- F. DATA ADMINISTRASI & SIM / LICENSE -->
-        <div class="space-y-1">
-            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px]">
-                F. DATA ADMINISTRASI & SIM / LICENSE
+        <!-- F. DATA ADMINISTRASI & SIM / LICENSE (SESUAI REVISI #2) -->
+        <div class="space-y-1 print-section">
+            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px] flex justify-between items-center print-section-header">
+                <span>F. DATA ADMINISTRASI & SURAT IZIN MENGEMUDI (SIM / LICENSE)</span>
+                <span class="text-[9px] text-teal-200">Dokumen Izin & Kepatuhan</span>
             </div>
-            <div class="border border-slate-200 p-2 rounded space-y-1">
-                <div class="grid grid-cols-3 gap-x-4">
+            <div class="border border-slate-200 p-2.5 rounded-xl space-y-2 print-card">
+                <!-- Administrasi Umum -->
+                <div class="grid grid-cols-3 gap-x-4 gap-y-0.5">
                     <p><strong>NPWP:</strong> {{ $employee->npwp_number ?? '-' }} (PTKP: {{ $employee->ptkp_status ?? '-' }})</p>
                     <p><strong>BPJS Kes:</strong> {{ $employee->bpjs_kes_number ?? '-' }}</p>
                     <p><strong>BPJS TK:</strong> {{ $employee->bpjs_tk_number ?? '-' }}</p>
                     <p class="col-span-3"><strong>Bank:</strong> {{ $employee->bank_name ?? '-' }} - {{ $employee->bank_account_number ?? '-' }} (a.n {{ $employee->bank_account_holder ?? '-' }})</p>
                 </div>
 
-                @if($employee->licenses->count() > 0)
-                <div class="pt-1 border-t border-slate-100">
-                    <span class="font-bold text-slate-700 block mb-0.5">Daftar SIM / License Kerja:</span>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        @foreach($employee->licenses as $lic)
-                        <div class="border border-slate-200 p-1 rounded bg-slate-50 text-[10px]">
+                <!-- Bagian Revisi: SIM Pemerintah (Multi-pilihan) & License FI (Ada/Tidak Ada) -->
+                @php
+                    // Collect Government SIMs
+                    $simLicenses = $employee->licenses->filter(function($l) {
+                        return stripos($l->license_type, 'SIM') !== false;
+                    });
+                    $simTypes = $simLicenses->map(function($l) {
+                        $cleaned = trim(str_ireplace('SIM', '', $l->license_type));
+                        return $cleaned ?: $l->license_type;
+                    })->filter()->values()->toArray();
+
+                    $simText = !empty($simTypes) ? implode(', ', $simTypes) : 'C, B';
+                    $simNumbers = $simLicenses->pluck('license_number')->filter()->implode(', ');
+                    if (empty($simNumbers) && $employee->licenses->first()) {
+                        $simNumbers = $employee->licenses->first()->license_number;
+                    }
+                    $simExpiry = $simLicenses->first()?->expiry_date?->format('d/m/Y');
+
+                    // Check License FI (Freeport Indonesia)
+                    $fiLicense = $employee->licenses->first(function($l) {
+                        return stripos($l->license_type, 'FI') !== false || stripos($l->license_type, 'Freeport') !== false || stripos($l->license_type, 'SIMPER') !== false;
+                    });
+                    $hasFi = $fiLicense ? true : false;
+                @endphp
+
+                <div class="pt-2 border-t border-slate-200 grid grid-cols-2 gap-3 print-card">
+                    <!-- SIM Pemerintah: Mendukung pengisian lebih dari 1 jenis SIM (contoh: C, B) -->
+                    <div class="border border-slate-200 p-2 rounded-lg bg-slate-50/70">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="font-bold text-[#2A3956] text-[10px] uppercase tracking-wide">SIM Pemerintah (SIM Pol)</span>
+                            <span class="text-[8.5px] text-slate-400 italic">Dapat multi-jenis (misal: C, B)</span>
+                        </div>
+                        <div class="space-y-0.5 text-[10px]">
+                            <p>
+                                <strong>Jenis SIM:</strong>
+                                <span class="px-2 py-0.5 rounded bg-white border border-slate-300 font-bold text-[#096256]">{{ $simText }}</span>
+                            </p>
+                            @if(!empty($simNumbers))
+                            <p><strong>Nomor SIM:</strong> <span class="font-mono">{{ $simNumbers }}</span></p>
+                            @endif
+                            @if($simExpiry)
+                            <p><strong>Masa Berlaku:</strong> {{ $simExpiry }}</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- License FI: Pilihan Ada dan Tidak Ada -->
+                    <div class="border border-slate-200 p-2 rounded-lg bg-slate-50/70">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="font-bold text-[#2A3956] text-[10px] uppercase tracking-wide">License FI (PT Freeport Indonesia)</span>
+                            <span class="text-[8.5px] text-slate-400">Pilihan: Ada / Tidak Ada</span>
+                        </div>
+                        <div class="space-y-1 text-[10px]">
+                            <div class="flex items-center gap-2">
+                                <strong>Status:</strong>
+                                <span class="inline-flex items-center gap-1.5">
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9.5px] font-bold {{ $hasFi ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-500' }}">
+                                        {!! $hasFi ? '&#9679;' : '&#9675;' !!} Ada
+                                    </span>
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9.5px] font-bold {{ !$hasFi ? 'bg-rose-100 text-rose-800 border border-rose-300' : 'bg-slate-100 text-slate-500' }}">
+                                        {!! !$hasFi ? '&#9679;' : '&#9675;' !!} Tidak Ada
+                                    </span>
+                                </span>
+                            </div>
+                            @if($hasFi && $fiLicense)
+                            <p><strong>No. License FI:</strong> <span class="font-mono font-bold">{{ $fiLicense->license_number ?? '-' }}</span></p>
+                            <p><strong>Masa Berlaku:</strong> {{ $fiLicense->expiry_date ? $fiLicense->expiry_date->format('d/m/Y') : '-' }}</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dokumen License Operasional / K3 Lainnya -->
+                @php
+                    $otherLicenses = $employee->licenses->reject(function($l) {
+                        return stripos($l->license_type, 'SIM') !== false || stripos($l->license_type, 'FI') !== false || stripos($l->license_type, 'Freeport') !== false;
+                    });
+                @endphp
+                @if($otherLicenses->count() > 0)
+                <div class="pt-1 border-t border-slate-100 text-[9.5px] print-card">
+                    <span class="font-bold text-slate-700 block mb-0.5">License & SIO Khusus Lainnya:</span>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                        @foreach($otherLicenses as $lic)
+                        <div class="border border-slate-200 p-1 rounded bg-white">
                             <strong>{{ $lic->license_type }}</strong>: {{ $lic->license_number ?? '-' }}
-                            <div class="text-[9px] text-slate-500">Berlaku: {{ $lic->expiry_date ? $lic->expiry_date->format('d/m/Y') : '-' }}</div>
+                            <div class="text-[8.5px] text-slate-500">Berlaku: {{ $lic->expiry_date ? $lic->expiry_date->format('d/m/Y') : '-' }}</div>
                         </div>
                         @endforeach
                     </div>
@@ -308,11 +475,11 @@
         </div>
 
         <!-- G. DATA KEPEGAWAIAN (HRD) -->
-        <div class="space-y-1">
-            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px]">
+        <div class="space-y-1 print-section">
+            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px] print-section-header">
                 G. DATA KEPEGAWAIAN (HRD)
             </div>
-            <div class="grid grid-cols-3 gap-x-4 gap-y-1 border border-slate-200 p-2 rounded">
+            <div class="grid grid-cols-3 gap-x-4 gap-y-1 border border-slate-200 p-2 rounded print-card">
                 <p><strong>ID Karyawan:</strong> {{ $employee->employee_id }}</p>
                 <p><strong>Jabatan:</strong> {{ $employee->position }}</p>
                 <p><strong>Departemen:</strong> {{ $employee->department }}</p>
@@ -325,7 +492,7 @@
             </div>
 
             @if($employee->contracts->count() > 0)
-            <div class="pt-1">
+            <div class="pt-1 print-card">
                 <p class="font-bold text-slate-700 text-[10px] mb-0.5">
                     Riwayat Kontrak PKWT (Total {{ $employee->contracts->count() }} Kontrak &bull; {{ max(0, $employee->contracts->count() - 1) }} Kali Perpanjangan):
                 </p>
@@ -358,22 +525,24 @@
         </div>
 
         <!-- H. GAJI & CUTI -->
-        <div class="space-y-1">
-            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px] flex justify-between">
+        <div class="space-y-1 print-section">
+            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px] flex justify-between print-section-header">
                 <span>H. GAJI & RIWAYAT CUTI</span>
                 @if(Auth::user()->isSuperAdmin())
-                <span class="text-[9px] text-teal-200">Confidential</span>
+                <span class="text-[9px] text-teal-200 font-bold">Confidential</span>
                 @endif
             </div>
 
             <!-- SALARY DETAILS (SUPER ADMIN ONLY) -->
             @if(Auth::user()->isSuperAdmin())
-            <div class="border border-slate-200 p-2 rounded space-y-1 bg-teal-50/20">
-                <div class="grid grid-cols-4 gap-2">
+            <div class="border border-slate-200 p-2 rounded space-y-1 bg-teal-50/20 print-card">
+                <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
                     <p><strong>Grade:</strong> {{ $employee->line_grade ?? '-' }}</p>
                     <p><strong>Level:</strong> {{ $employee->salary_level ?? '-' }}</p>
                     <p><strong>Gaji Pokok:</strong> Rp {{ number_format($employee->basic_salary, 0, ',', '.') }}</p>
+                    <p><strong>Gaji Harian:</strong> Rp {{ number_format($employee->daily_rate, 0, ',', '.') }}</p>
                     <p><strong>Gaji Per Jam:</strong> Rp {{ number_format($employee->hourly_rate, 0, ',', '.') }}</p>
+                    <p><strong>Tgl Berlaku:</strong> {{ $employee->salary_effective_date ? $employee->salary_effective_date->format('d/m/Y') : ($employee->currentSalaryHistory?->start_date ? $employee->currentSalaryHistory->start_date->format('d/m/Y') : '-') }}</p>
                 </div>
                 @if($employee->allowances->count() > 0)
                 <div class="text-[10px] pt-0.5 border-t border-slate-100">
@@ -388,7 +557,7 @@
 
             <!-- RIWAYAT CUTI (TAMPIL UNTUK SEMUA) -->
             @if($employee->leaves->count() > 0)
-            <div class="pt-0.5">
+            <div class="pt-0.5 print-card">
                 <p class="font-bold text-slate-700 text-[10px] mb-0.5">
                     Riwayat Cuti Karyawan (Cuti Terakhir: {{ $employee->last_leave_date ? $employee->last_leave_date->format('d/m/Y') : '-' }}):
                 </p>
@@ -420,47 +589,51 @@
             @endif
         </div>
 
-        <!-- I. PERNYATAAN & TANDA TANGAN -->
-        <div class="space-y-1.5 pt-1">
-            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px]">
+        <!-- I. PERNYATAAN & TANDA TANGAN (SESUAI REVISI #3: PENUNJUK JABATAN DIPERBESAR) -->
+        <div class="space-y-1.5 pt-1 print-section print-signature-section">
+            <div class="bg-[#2A3956] text-white font-bold py-1 px-2.5 rounded text-[11px] print-section-header">
                 I. PERNYATAAN
             </div>
-            <p class="italic text-[9.5px] text-slate-600">
+            <p class="italic text-[9.5px] text-slate-600 print-card">
                 "Saya menyatakan bahwa seluruh data yang saya berikan dalam formulir ini adalah benar dan dapat dipertanggungjawabkan. Saya bersedia memberitahukan kepada perusahaan apabila terdapat perubahan data."
             </p>
 
-            <div class="grid grid-cols-2 gap-8 pt-1 text-center">
+            <div class="grid grid-cols-2 gap-8 pt-2 text-center print-card">
                 <!-- TTD Karyawan -->
-                <div class="flex flex-col items-center justify-between h-28 border border-slate-300 p-2 rounded">
-                    <span class="font-bold text-[10px]">Karyawan yang Bersangkutan</span>
-                    <div class="h-12 flex items-center justify-center">
+                <div class="flex flex-col items-center justify-between h-36 border border-slate-300 p-2.5 rounded-xl bg-slate-50/40">
+                    <span class="font-black text-[12px] text-[#2A3956] uppercase tracking-wider">KARYAWAN YANG BERSANGKUTAN</span>
+                    <div class="h-20 flex items-center justify-center my-0.5">
                         @php $empSign = $employee->getDocument('employee_signature'); @endphp
                         @if($empSign)
-                        <img src="{{ $empSign->url }}" alt="TTD" class="max-h-full max-w-[120px] object-contain">
+                        <img src="{{ $empSign->url }}" alt="TTD" class="h-full w-auto max-h-20 max-w-[200px] object-contain">
                         @else
                         <span class="text-[9px] text-slate-300 italic">(Tanda Tangan)</span>
                         @endif
                     </div>
-                    <span class="font-bold underline text-[10px]">{{ $employee->employee_signature_name ?? $employee->full_name }}</span>
+                    <div class="w-full border-t border-slate-300 pt-1">
+                        <span class="font-bold underline text-[11px] text-slate-800 block">{{ $employee->employee_signature_name ?? $employee->full_name }}</span>
+                    </div>
                 </div>
 
-                <!-- TTD HRD -->
-                <div class="flex flex-col items-center justify-between h-28 border border-slate-300 p-2 rounded">
-                    <span class="font-bold text-[10px]">HRD / Pemeriksa</span>
-                    <div class="h-12 flex items-center justify-center">
+                <!-- TTD HRD / Pemeriksa -->
+                <div class="flex flex-col items-center justify-between h-36 border border-slate-300 p-2.5 rounded-xl bg-slate-50/40">
+                    <span class="font-black text-[13px] text-[#2A3956] uppercase tracking-wider">HRD / PEMERIKSA</span>
+                    <div class="h-20 flex items-center justify-center my-0.5">
                         @php $hrdSign = $employee->getDocument('hrd_signature'); @endphp
                         @if($hrdSign)
-                        <img src="{{ $hrdSign->url }}" alt="TTD HRD" class="max-h-full max-w-[120px] object-contain">
+                        <img src="{{ $hrdSign->url }}" alt="TTD HRD" class="h-full w-auto max-h-20 max-w-[200px] object-contain">
                         @else
                         <span class="text-[9px] text-slate-300 italic">(Tanda Tangan & Cap)</span>
                         @endif
                     </div>
-                    <span class="font-bold underline text-[10px]">{{ $employee->hrd_signature_name ?? 'HRD PT ABP' }}</span>
+                    <div class="w-full border-t border-slate-300 pt-1">
+                        <span class="font-bold underline text-[11.5px] text-slate-800 block">{{ ($employee->hrd_signature_name && !in_array($employee->hrd_signature_name, ['Super Admin ABP', 'Admin HRD ABP', 'HRD PT ABP'])) ? $employee->hrd_signature_name : 'HR, Admin Manager' }}</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="text-center text-[8.5px] text-slate-400 pt-1 border-t border-slate-200">
+        <div class="text-center text-[8.5px] text-slate-400 pt-1 border-t border-slate-200 print-footer">
             Form Biodata Karyawan &bull; PT Artha Buana Primacoral &bull; Dicetak: {{ date('d/m/Y H:i') }}
         </div>
 

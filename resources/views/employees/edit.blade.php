@@ -6,6 +6,7 @@
 @section('content')
 <div x-data="{
     activeTab: 'pribadi',
+    salaryModalOpen: false,
 
     photoPreview: @js($employee->photo ? asset('storage/' . $employee->photo) : null),
     updatePhotoPreview(event) {
@@ -1483,24 +1484,34 @@
 
             @if(Auth::user()->isSuperAdmin())
             <!-- H.1 DATA GAJI & HISTORI (SUPER ADMIN ONLY) Sesuai Revisi #2, #3, #4 -->
-            <div class="border-b border-slate-100 pb-4 flex items-center justify-between">
+            <div class="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                     <h3 class="text-base font-bold text-brand-navy flex items-center gap-2">
                         <i class="fa-solid fa-money-bill-wave text-emerald-600"></i>
                         <span>H.1 DATA GAJI KARYAWAN SAAT INI</span>
                         <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full border border-purple-200">Khusus Super Admin</span>
                     </h3>
-                    <p class="text-xs text-slate-400">Pembaruan gaji tidak akan menimpa data lama; perubahan dicatat sebagai histori</p>
+                    <p class="text-xs text-slate-400">Pembaruan gaji tidak akan menimpa data lama; riwayat kenaikan gaji tercatat permanen</p>
                 </div>
 
-                <!-- Checkbox Force Record Salary Change -->
-                <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-purple-800 bg-purple-50 px-3 py-1.5 rounded-xl border border-purple-200">
-                    <input type="checkbox" name="create_salary_history_entry" value="1" class="w-4 h-4 rounded text-purple-600 border-purple-300">
-                    <span>Catat Sebagai Kenaikan/Histori Baru</span>
-                </label>
+                <div class="flex items-center gap-2.5">
+                    <!-- Tombol Tambah Gaji Modal -->
+                    <button type="button"
+                            @click="salaryModalOpen = true"
+                            class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus-circle"></i>
+                        <span>Tambah Gaji</span>
+                    </button>
+
+                    <!-- Checkbox Force Record Salary Change -->
+                    <label class="hidden md:flex items-center gap-2 cursor-pointer text-xs font-bold text-purple-800 bg-purple-50 px-3 py-2 rounded-xl border border-purple-200">
+                        <input type="checkbox" name="create_salary_history_entry" value="1" class="w-4 h-4 rounded text-purple-600 border-purple-300">
+                        <span>Catat Sebagai Kenaikan/Histori Baru</span>
+                    </label>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 <!-- Line Grade (Grade A - F) -->
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">Line Grade <span class="text-red-500">*</span></label>
@@ -1523,26 +1534,44 @@
                     </select>
                 </div>
 
+                <!-- Tanggal Mulai Berlaku Perubahan -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">
+                        <i class="fa-regular fa-calendar-check text-emerald-600 mr-1"></i>
+                        Tanggal Mulai Berlaku
+                    </label>
+                    <input type="date" name="salary_effective_date" value="{{ old('salary_effective_date', $employee->salary_effective_date ? $employee->salary_effective_date->format('Y-m-d') : ($employee->currentSalaryHistory?->start_date ? $employee->currentSalaryHistory->start_date->format('Y-m-d') : date('Y-m-d'))) }}" class="w-full py-2.5 px-3.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-primary bg-white font-medium text-slate-800">
+                </div>
+
                 <!-- Gaji Pokok -->
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">Gaji Pokok (Rp) <span class="text-red-500">*</span></label>
-                    <input type="number" step="1000" min="0" name="basic_salary" value="{{ old('basic_salary', $employee->basic_salary) }}" class="w-full py-2.5 px-3.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-primary font-mono font-bold text-slate-800">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-bold text-slate-400">Rp</span>
+                        <input type="number" step="any" min="0" name="basic_salary" value="{{ old('basic_salary', (float)($employee->basic_salary ?? 0)) }}" class="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-primary font-mono font-bold text-slate-800">
+                    </div>
+                </div>
+
+                <!-- Gaji Harian -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Gaji Harian (Rp)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-bold text-slate-400">Rp</span>
+                        <input type="number" step="any" min="0" name="daily_rate" value="{{ old('daily_rate', (float)($employee->daily_rate ?? 0)) }}" placeholder="Contoh: 350000" class="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-primary font-mono font-bold text-slate-800">
+                    </div>
                 </div>
 
                 <!-- Gaji Per Jam -->
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">Gaji Per Jam (Rp)</label>
-                    <input type="number" step="100" min="0" name="hourly_rate" value="{{ old('hourly_rate', $employee->hourly_rate) }}" class="w-full py-2.5 px-3.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-primary font-mono font-bold text-slate-800">
-                </div>
-
-                <!-- Tanggal Mulai Berlaku Perubahan -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Tanggal Berlaku Perubahan</label>
-                    <input type="date" name="salary_effective_date" value="{{ date('Y-m-d') }}" class="w-full py-2.5 px-3.5 rounded-xl border border-slate-200 text-xs">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-bold text-slate-400">Rp</span>
+                        <input type="number" step="any" min="0" name="hourly_rate" value="{{ old('hourly_rate', (float)($employee->hourly_rate ?? 0)) }}" class="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-primary font-mono font-bold text-slate-800">
+                    </div>
                 </div>
 
                 <!-- Keterangan / Alasan Perubahan Gaji -->
-                <div class="sm:col-span-3">
+                <div class="sm:col-span-2 lg:col-span-3">
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">Keterangan / Alasan Perubahan Gaji</label>
                     <input type="text" name="salary_change_notes" placeholder="Contoh: Kenaikan berkala tahunan / Promosi jabatan..." class="w-full py-2.5 px-3.5 rounded-xl border border-slate-200 text-xs">
                 </div>
@@ -1617,7 +1646,7 @@
 
                             <div>
                                 <label class="block font-bold text-slate-600 mb-1">Nominal (Rp/Bulan)</label>
-                                <input type="number" step="1000" min="0" :name="`allowances[${idx}][amount]`" x-model="alw.amount" class="w-full p-2 rounded-xl border border-slate-200 font-mono">
+                                <input type="number" step="any" min="0" :name="`allowances[${idx}][amount]`" x-model="alw.amount" class="w-full p-2 rounded-xl border border-slate-200 font-mono">
                             </div>
 
                             <div class="flex items-center gap-2">
@@ -1644,6 +1673,10 @@
                         </h4>
                         <p class="text-[11px] text-slate-400">Seluruh riwayat perjalanan kompensasi tersimpan permanen dan tidak terhapus</p>
                     </div>
+                    <button type="button" @click="salaryModalOpen = true" class="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs rounded-xl border border-emerald-200 transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-plus-circle"></i>
+                        <span>+ Tambah Gaji Baru</span>
+                    </button>
                 </div>
 
                 <div class="overflow-x-auto rounded-2xl border border-slate-200">
@@ -1651,13 +1684,16 @@
                         <thead class="bg-slate-100/80 font-bold text-slate-700 uppercase text-[10px]">
                             <tr>
                                 <th class="py-2.5 px-3">Periode</th>
+                                <th class="py-2.5 px-3">Tgl Mulai Berlaku</th>
                                 <th class="py-2.5 px-3 text-center">Grade</th>
                                 <th class="py-2.5 px-3 text-center">Level</th>
                                 <th class="py-2.5 px-3 text-right">Gaji Pokok</th>
+                                <th class="py-2.5 px-3 text-right">Gaji Harian</th>
                                 <th class="py-2.5 px-3 text-right">Gaji / Jam</th>
                                 <th class="py-2.5 px-3 text-right">Tunjangan</th>
                                 <th class="py-2.5 px-3">Keterangan / Alasan</th>
                                 <th class="py-2.5 px-3 text-center">Status</th>
+                                <th class="py-2.5 px-3 text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700">
@@ -1665,6 +1701,12 @@
                             <tr class="{{ $hist->is_current ? 'bg-teal-50/50 font-semibold' : 'hover:bg-slate-50' }}">
                                 <td class="py-2.5 px-3 font-mono font-bold text-slate-800">
                                     {{ $hist->period ?: ($hist->start_date ? $hist->start_date->format('Y') : '-') }}
+                                </td>
+                                <td class="py-2.5 px-3 font-medium text-slate-600">
+                                    <span class="inline-flex items-center gap-1">
+                                        <i class="fa-regular fa-calendar text-[10px] text-emerald-600"></i>
+                                        {{ $hist->start_date ? $hist->start_date->format('d/m/Y') : '-' }}
+                                    </span>
                                 </td>
                                 <td class="py-2.5 px-3 text-center">
                                     <span class="inline-block px-2 py-0.5 rounded font-bold text-[10px] bg-slate-200/80 text-slate-700">
@@ -1678,6 +1720,9 @@
                                 </td>
                                 <td class="py-2.5 px-3 text-right font-mono font-bold text-brand-navy">
                                     Rp {{ number_format($hist->basic_salary, 0, ',', '.') }}
+                                </td>
+                                <td class="py-2.5 px-3 text-right font-mono font-medium text-slate-700">
+                                    Rp {{ number_format($hist->daily_rate, 0, ',', '.') }}
                                 </td>
                                 <td class="py-2.5 px-3 text-right font-mono">
                                     Rp {{ number_format($hist->hourly_rate, 0, ',', '.') }}
@@ -1699,10 +1744,18 @@
                                     </span>
                                     @endif
                                 </td>
+                                <td class="py-2.5 px-3 text-center">
+                                    <button type="button"
+                                            onclick="deleteSalaryHistory('{{ route('employees.salary_histories.destroy', $hist->id) }}')"
+                                            class="text-slate-400 hover:text-red-600 p-1 rounded transition text-xs"
+                                            title="Hapus Riwayat">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </button>
+                                </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="8" class="py-6 text-center text-slate-400">Belum ada catatan histori perubahan gaji.</td>
+                                <td colspan="11" class="py-6 text-center text-slate-400">Belum ada catatan histori perubahan gaji.</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -1907,6 +1960,26 @@
         </div>
 
     </form>
+
+    @if(Auth::user()->isSuperAdmin())
+    <!-- Form terpisah untuk hapus riwayat gaji (di luar form utama agar tidak konflik _method) -->
+    <form id="deleteSalaryHistForm" method="POST" style="display: none;">
+        @csrf
+        @method('DELETE')
+    </form>
+    <script>
+        function deleteSalaryHistory(url) {
+            if (confirm('Apakah Anda yakin ingin menghapus data riwayat gaji ini?')) {
+                const form = document.getElementById('deleteSalaryHistForm');
+                form.action = url;
+                form.submit();
+            }
+        }
+    </script>
+
+    <!-- Modal Tambah Gaji (di luar form utama agar tidak terjadi nested form) -->
+    @include('employees.partials.modal_add_salary')
+    @endif
 
     <!-- QUICK ADD DEPARTMENT MODAL Sesuai Revisi #1 -->
     <div x-show="newDeptModal"

@@ -110,28 +110,64 @@
     },
     filePreviewModal: {
         open: false,
-        title: '',
+        title: 'Pratinjau Dokumen',
         url: '',
         downloadUrl: '',
-        title: 'Pratinjau Dokumen',
         fileName: 'Dokumen',
         isPdf: false,
         isImage: false
     },
-    openFilePreview(url, title, fileName = '', downloadUrl = '') {
+    openFilePreview(arg1, arg2, arg3 = '', arg4 = '') {
+        let url = '';
+        let title = '';
+        let fileName = '';
+        let downloadUrl = '';
+
+        // Deteksi apakah string berbentuk URL, path, atau nama file berekstensi
+        const isUrlOrPath = (str) => typeof str === 'string' && (
+            str.startsWith('http://') ||
+            str.startsWith('https://') ||
+            str.startsWith('/') ||
+            str.startsWith('blob:') ||
+            str.startsWith('data:') ||
+            str.includes('/') ||
+            str.includes('\\') ||
+            /\.(pdf|jpg|jpeg|png|webp|gif|svg|bmp)(\?|$)/i.test(str)
+        );
+
+        if (isUrlOrPath(arg1) && !isUrlOrPath(arg2)) {
+            // Pola: openFilePreview(url, title, fileName, downloadUrl)
+            url = arg1;
+            title = arg2;
+            fileName = arg3;
+            downloadUrl = arg4;
+        } else if (!isUrlOrPath(arg1) && isUrlOrPath(arg2)) {
+            // Pola: openFilePreview(title, url, fileName, downloadUrl)
+            title = arg1;
+            url = arg2;
+            fileName = arg3;
+            downloadUrl = arg4;
+        } else if (typeof arg2 === 'string' && (arg2.includes('/') || arg2.startsWith('blob:') || arg2.startsWith('data:'))) {
+            title = arg1;
+            url = arg2;
+            fileName = arg3;
+            downloadUrl = arg4;
+        } else {
+            url = arg1 || '';
+            title = arg2 || '';
+            fileName = arg3 || '';
+            downloadUrl = arg4 || '';
+        }
+
         this.filePreviewModal.url = url || '';
         this.filePreviewModal.downloadUrl = downloadUrl || url || '';
         this.filePreviewModal.title = title || 'Pratinjau Dokumen';
-        this.filePreviewModal.fileName = fileName || 'Dokumen';
+        this.filePreviewModal.fileName = fileName || (url ? url.split('/').pop().split('?')[0] : 'Dokumen');
 
-        const lower = (url || '').toLowerCase();
+        const checkStr = ((url || '') + ' ' + (this.filePreviewModal.fileName || '') + ' ' + (title || '')).toLowerCase();
 
-        this.filePreviewModal.isPdf =
-            lower.includes('.pdf') ||
-            lower.endsWith('pdf');
-
-        this.filePreviewModal.isImage =
-            /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(lower);
+        this.filePreviewModal.isPdf = checkStr.includes('.pdf');
+        this.filePreviewModal.isImage = /\.(jpg|jpeg|png|webp|gif|svg|bmp)(\?|\s|$)/i.test(checkStr);
 
         this.filePreviewModal.open = true;
     }
@@ -525,7 +561,7 @@
                         <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
                     </a>
 
-                    <a :href="filePreviewModal.url"
+                    <a :href="filePreviewModal.downloadUrl || filePreviewModal.url"
                        :download="filePreviewModal.fileName"
                        class="px-3.5 py-1.5 bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-bold rounded-xl shadow transition inline-flex items-center gap-1.5"
                        title="Download file">
@@ -558,7 +594,7 @@
                         </div>
                         <h4 class="font-bold text-sm text-brand-navy mb-1" x-text="filePreviewModal.fileName"></h4>
                         <p class="text-xs text-slate-400 mb-4">Format dokumen ini tidak mendukung pratinjau langsung di dalam browser.</p>
-                        <a :href="filePreviewModal.url" target="_blank" class="px-4 py-2 bg-brand-primary text-white rounded-xl font-bold text-xs shadow hover:bg-brand-primary-hover inline-flex items-center gap-1.5">
+                        <a :href="filePreviewModal.downloadUrl || filePreviewModal.url" target="_blank" class="px-4 py-2 bg-brand-primary text-white rounded-xl font-bold text-xs shadow hover:bg-brand-primary-hover inline-flex items-center gap-1.5">
                             <i class="fa-solid fa-download"></i> Unduh / Buka Dokumen
                         </a>
                     </div>

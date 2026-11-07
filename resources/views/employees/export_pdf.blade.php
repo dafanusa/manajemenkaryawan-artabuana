@@ -17,6 +17,12 @@
         @media print {
             .no-print { display: none !important; }
             @page { size: landscape; margin: 10mm 15mm; }
+            table { border-collapse: collapse !important; width: 100% !important; }
+            thead { display: table-header-group !important; break-after: avoid !important; page-break-after: avoid !important; }
+            thead th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            tr { break-inside: avoid !important; page-break-inside: avoid !important; }
+            tbody { break-inside: auto !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
     </style>
 </head>

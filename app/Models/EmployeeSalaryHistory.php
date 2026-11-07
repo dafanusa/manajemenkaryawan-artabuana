@@ -16,6 +16,7 @@ class EmployeeSalaryHistory extends Model
     {
         return [
             'basic_salary' => 'decimal:2',
+            'daily_rate' => 'decimal:2',
             'hourly_rate' => 'decimal:2',
             'allowances_total' => 'decimal:2',
             'allowances_detail' => 'array',

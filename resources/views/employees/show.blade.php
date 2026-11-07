@@ -4,7 +4,7 @@
 @section('page_title', 'Preview Biodata Karyawan: ' . $employee->full_name)
 
 @section('content')
-<div class="space-y-6 max-w-5xl mx-auto">
+<div class="space-y-6 max-w-5xl mx-auto" x-data="{ salaryModalOpen: false }">
 
     <!-- ACTION TOOLBAR (NO PRINT) -->
     <div class="no-print bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -56,6 +56,15 @@
                 <i class="fa-regular fa-pen-to-square"></i>
                 <span>Edit Data</span>
             </a>
+
+            <!-- Google Drive Folder Button -->
+            @if($employee->google_drive_folder_url)
+            <a href="{{ $employee->google_drive_folder_url }}" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold transition flex items-center gap-1.5 shadow-sm" title="Buka folder dokumen karyawan di Google Drive">
+                <i class="fa-brands fa-google-drive text-amber-600"></i>
+                <span>Folder Drive</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-amber-500"></i>
+            </a>
+            @endif
 
             <!-- Print / Download PDF -->
             <a href="{{ route('employees.print', $employee) }}" target="_blank" class="px-4 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white text-xs font-bold shadow-md shadow-brand-primary/20 transition flex items-center gap-1.5">
@@ -145,6 +154,12 @@
                         <a href="{{ $doc->url }}" download class="text-[10px] text-slate-500 hover:text-slate-700 font-medium" title="Unduh File">
                             <i class="fa-solid fa-download text-[9px]"></i>
                         </a>
+                        @if($doc->google_drive_url)
+                        <span class="text-slate-300 text-[10px]">&bull;</span>
+                        <a href="{{ $doc->google_drive_url }}" target="_blank" rel="noopener noreferrer" class="text-[10px] text-amber-600 hover:text-amber-800 font-medium" title="Buka di Google Drive">
+                            <i class="fa-brands fa-google-drive text-[10px]"></i>
+                        </a>
+                        @endif
                     </div>
                     @else
                     <span class="text-[10px] text-slate-400 italic block mt-1">Belum ada</span>
@@ -159,28 +174,19 @@
     <!-- ============================================================== -->
     <div class="bg-white p-8 sm:p-10 rounded-3xl border border-slate-200 shadow-md printable-document space-y-6 text-slate-800">
 
-        <!-- HEADER KOP PERUSAHAAN (MATCHING OFFICIAL ABP BIODATA FORM) -->
-        <div class="border-b-2 border-brand-navy pb-5 flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <img src="{{ asset('images/logo.png') }}" alt="Logo PT ABP" class="h-16 object-contain">
-                <div>
-                    <h1 class="text-xl sm:text-2xl font-black text-brand-navy tracking-tight leading-tight">
-                        PT ARTHA BUANA PRIMACORAL
-                    </h1>
-                    <p class="text-[11px] text-brand-primary font-bold uppercase tracking-wider">
-                        Mining Services, General Contractor & Heavy Equipment Fleet
-                    </p>
-                    <p class="text-[10px] text-slate-500">
-                        Timika Base &bull; Highland Mile 68 / Lowland Operations &bull; Papua Tengah
-                    </p>
-                </div>
+        <!-- HEADER KOP PERUSAHAAN (SESUAI REVISI #1) -->
+        <div class="border-b-2 border-brand-navy pb-4 flex items-center justify-between">
+            <div class="flex items-center">
+                <img src="{{ asset('images/logo.png') }}" alt="PT Artha Buana Primacoral" class="h-12 max-h-14 object-contain">
             </div>
 
-            <!-- Form Badge -->
-            <div class="text-right border-l border-slate-200 pl-4 hidden sm:block">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Formulir HRD</span>
-                <span class="text-sm font-extrabold text-brand-navy block">FORM BIODATA KARYAWAN</span>
-                <span class="text-[10px] font-mono text-teal-700 font-bold">ID: {{ $employee->employee_id }}</span>
+            <!-- Form Badge Lebih Menonjol -->
+            <div class="text-right">
+                <div class="inline-block border-2 border-brand-navy bg-slate-50/90 px-5 py-2.5 rounded-2xl text-right shadow-sm">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-brand-primary block">FORMULIR HRD</span>
+                    <span class="text-base sm:text-lg font-black text-brand-navy tracking-tight block leading-tight">FORM BIODATA KARYAWAN</span>
+                    <span class="text-[11px] font-mono text-slate-500 font-bold block mt-0.5">ID: {{ $employee->employee_id }}</span>
+                </div>
             </div>
         </div>
 
@@ -519,13 +525,85 @@
                 </div>
             </div>
 
-            <!-- SIM / LICENSE LIST -->
-            @if($employee->licenses->count() > 0)
-            <div class="space-y-2 pt-2 border-t border-slate-100">
-                <div class="flex items-center justify-between">
+            <!-- SIM / LICENSE LIST (SESUAI REVISI #2) -->
+            <div class="space-y-3 pt-2 border-t border-slate-100">
+                @php
+                    $simLicenses = $employee->licenses->filter(function($l) {
+                        return stripos($l->license_type, 'SIM') !== false;
+                    });
+                    $simTypes = $simLicenses->map(function($l) {
+                        $cleaned = trim(str_ireplace('SIM', '', $l->license_type));
+                        return $cleaned ?: $l->license_type;
+                    })->filter()->values()->toArray();
+
+                    $simText = !empty($simTypes) ? implode(', ', $simTypes) : 'C, B';
+                    $simNumbers = $simLicenses->pluck('license_number')->filter()->implode(', ');
+                    if (empty($simNumbers) && $employee->licenses->first()) {
+                        $simNumbers = $employee->licenses->first()->license_number;
+                    }
+                    $simExpiry = $simLicenses->first()?->expiry_date?->format('d/m/Y');
+
+                    $fiLicense = $employee->licenses->first(function($l) {
+                        return stripos($l->license_type, 'FI') !== false || stripos($l->license_type, 'Freeport') !== false || stripos($l->license_type, 'SIMPER') !== false;
+                    });
+                    $hasFi = $fiLicense ? true : false;
+                @endphp
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <!-- SIM Pemerintah (Multi-Jenis) -->
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/70">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="font-bold text-brand-navy flex items-center gap-1.5">
+                                <i class="fa-solid fa-id-card text-brand-primary"></i>
+                                <span>SIM Pemerintah (SIM Pol)</span>
+                            </span>
+                            <span class="text-[10px] text-slate-400">Dapat diisi lebih dari 1 jenis</span>
+                        </div>
+                        <div class="space-y-1 text-slate-700">
+                            <p><strong>Jenis SIM:</strong> <span class="px-2 py-0.5 rounded bg-white border border-slate-200 font-bold text-brand-primary">{{ $simText }}</span></p>
+                            @if(!empty($simNumbers))
+                            <p><strong>No. SIM:</strong> <span class="font-mono">{{ $simNumbers }}</span></p>
+                            @endif
+                            @if($simExpiry)
+                            <p><strong>Masa Berlaku:</strong> {{ $simExpiry }}</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- License FI (Pilihan Ada / Tidak Ada) -->
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/70">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="font-bold text-brand-navy flex items-center gap-1.5">
+                                <i class="fa-solid fa-certificate text-brand-primary"></i>
+                                <span>License FI (PT Freeport Indonesia)</span>
+                            </span>
+                            <span class="text-[10px] text-slate-400">Status Kepemilikan</span>
+                        </div>
+                        <div class="space-y-1 text-slate-700">
+                            <div class="flex items-center gap-2">
+                                <strong>Status:</strong>
+                                <span class="inline-flex items-center gap-1.5">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold {{ $hasFi ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-400' }}">
+                                        {!! $hasFi ? '&#9679;' : '&#9675;' !!} Ada
+                                    </span>
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold {{ !$hasFi ? 'bg-rose-100 text-rose-800 border border-rose-300' : 'bg-slate-100 text-slate-400' }}">
+                                        {!! !$hasFi ? '&#9679;' : '&#9675;' !!} Tidak Ada
+                                    </span>
+                                </span>
+                            </div>
+                            @if($hasFi && $fiLicense)
+                            <p><strong>No. License FI:</strong> <span class="font-mono font-bold">{{ $fiLicense->license_number ?? '-' }}</span></p>
+                            <p><strong>Masa Berlaku:</strong> {{ $fiLicense->expiry_date ? $fiLicense->expiry_date->format('d/m/Y') : '-' }}</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                @if($employee->licenses->count() > 0)
+                <div class="flex items-center justify-between pt-2">
                     <span class="text-xs font-bold text-brand-navy flex items-center gap-2">
-                        <i class="fa-solid fa-id-card text-brand-primary"></i>
-                        <span>Daftar SIM & License Kerja:</span>
+                        <i class="fa-solid fa-list-check text-brand-primary"></i>
+                        <span>Detail Seluruh Dokumen SIM & License Terdaftar:</span>
                     </span>
                     <span class="text-[10px] text-slate-400">{{ $employee->licenses->count() }} Dokumen License</span>
                 </div>
@@ -561,7 +639,7 @@
                                     @if($lic->document_path)
                                     <div class="inline-flex items-center gap-1.5">
                                         <button type="button"
-                                                @click="openFilePreview('{{ asset('storage/' . $lic->document_path) }}', 'SIM/License - {{ $lic->license_type }}', '{{ $licenseDoc?->original_name ?? basename($lic->document_path) }}')"
+                                                @click="openFilePreview('{{ asset('storage/' . $lic->document_path) }}', 'SIM/License - {{ $lic->license_type }}', '{{ strtolower(pathinfo($lic->document_path, PATHINFO_EXTENSION)) }}')"
                                                 class="text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
                                             <i class="fa-solid fa-eye text-[10px]"></i>
                                             <span>Lihat</span>
@@ -717,17 +795,25 @@
             <!-- GAJI SECTION (HAK AKSES SUPER ADMIN ONLY) -->
             @if(Auth::user()->isSuperAdmin())
             <div class="space-y-4 p-4 rounded-2xl bg-teal-50/40 border border-teal-200">
-                <div class="flex items-center justify-between border-b border-teal-100 pb-2">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-teal-100 pb-2.5 gap-2">
                     <span class="text-xs font-bold text-brand-navy uppercase tracking-wider flex items-center gap-2">
                         <i class="fa-solid fa-money-bill-wave text-brand-primary"></i>
                         <span>Data Gaji Karyawan (Super Admin)</span>
                     </span>
-                    <span class="text-[10px] font-bold text-teal-800 bg-teal-100/70 px-2.5 py-0.5 rounded-full border border-teal-200">
-                        Sensitif / Confidential
-                    </span>
+                    <div class="flex items-center gap-2">
+                        <button type="button"
+                                @click="salaryModalOpen = true"
+                                class="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-plus-circle"></i>
+                            <span>Tambah Gaji</span>
+                        </button>
+                        <span class="text-[10px] font-bold text-teal-800 bg-teal-100/70 px-2.5 py-1 rounded-full border border-teal-200">
+                            Sensitif / Confidential
+                        </span>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 text-xs">
                     <div class="p-3 bg-white rounded-xl border border-teal-100 shadow-sm">
                         <span class="text-[10px] font-bold text-slate-400 uppercase block">Line Grade</span>
                         <span class="text-base font-extrabold text-brand-navy">{{ $employee->line_grade ?? '-' }}</span>
@@ -736,9 +822,13 @@
                         <span class="text-[10px] font-bold text-slate-400 uppercase block">Salary Level</span>
                         <span class="text-base font-extrabold text-brand-navy">{{ $employee->salary_level ?? '-' }}</span>
                     </div>
-                    <div class="p-3 bg-white rounded-xl border border-teal-100 shadow-sm">
+                    <div class="p-3 bg-white rounded-xl border border-teal-100 shadow-sm col-span-2 sm:col-span-1">
                         <span class="text-[10px] font-bold text-slate-400 uppercase block">Gaji Pokok</span>
                         <span class="text-base font-extrabold text-brand-navy font-mono">Rp {{ number_format($employee->basic_salary, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="p-3 bg-white rounded-xl border border-teal-100 shadow-sm">
+                        <span class="text-[10px] font-bold text-emerald-600 uppercase block">Gaji Harian</span>
+                        <span class="text-base font-extrabold text-brand-navy font-mono">Rp {{ number_format($employee->daily_rate, 0, ',', '.') }}</span>
                     </div>
                     <div class="p-3 bg-white rounded-xl border border-teal-100 shadow-sm">
                         <span class="text-[10px] font-bold text-slate-400 uppercase block">Gaji Per Jam</span>
@@ -746,14 +836,21 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                    <div class="flex border-b border-slate-100 pb-1.5">
-                        <span class="w-44 font-semibold text-slate-500 flex-shrink-0">Posisi Saat Ini</span>
-                        <span class="font-medium">: {{ $employee->current_position ?? $employee->position }}</span>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs bg-white/70 p-3 rounded-xl border border-teal-100/60">
+                    <div class="flex flex-col">
+                        <span class="font-semibold text-slate-400 text-[10px] uppercase">Tanggal Mulai Berlaku</span>
+                        <span class="font-bold text-brand-navy text-xs mt-0.5">
+                            <i class="fa-regular fa-calendar-check text-emerald-600 mr-1"></i>
+                            {{ $employee->salary_effective_date ? $employee->salary_effective_date->format('d F Y') : ($employee->currentSalaryHistory?->start_date ? $employee->currentSalaryHistory->start_date->format('d F Y') : '-') }}
+                        </span>
                     </div>
-                    <div class="flex border-b border-slate-100 pb-1.5">
-                        <span class="w-44 font-semibold text-slate-500 flex-shrink-0">Lama Kerja Sebelumnya</span>
-                        <span class="font-medium">: {{ $employee->previous_work_years }} Tahun, {{ $employee->previous_work_months }} Bulan</span>
+                    <div class="flex flex-col">
+                        <span class="font-semibold text-slate-400 text-[10px] uppercase">Posisi Saat Ini</span>
+                        <span class="font-bold text-slate-700 text-xs mt-0.5">{{ $employee->current_position ?? $employee->position ?? '-' }}</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-semibold text-slate-400 text-[10px] uppercase">Lama Kerja Sebelumnya</span>
+                        <span class="font-bold text-slate-700 text-xs mt-0.5">{{ $employee->previous_work_years }} Tahun, {{ $employee->previous_work_months }} Bulan</span>
                     </div>
                 </div>
 
@@ -779,7 +876,12 @@
                             <i class="fa-solid fa-clock-rotate-left text-brand-primary"></i>
                             <span>Histori Penyesuaian Gaji (Gaji Awal &rarr; Gaji Akhir):</span>
                         </span>
-                        <span class="text-[10px] text-slate-400">{{ $employee->salaryHistories->count() }} Data Histori</span>
+                        <div class="flex items-center gap-2">
+                            <button type="button" @click="salaryModalOpen = true" class="text-xs font-bold text-emerald-700 hover:text-emerald-800 underline flex items-center gap-1">
+                                <i class="fa-solid fa-plus-circle"></i> + Tambah Gaji
+                            </button>
+                            <span class="text-[10px] text-slate-400">({{ $employee->salaryHistories->count() }} Data Histori)</span>
+                        </div>
                     </div>
 
                     <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
@@ -787,9 +889,11 @@
                             <thead class="bg-slate-50 font-bold text-slate-600 border-b border-slate-200 text-[11px]">
                                 <tr>
                                     <th class="py-2.5 px-3">Periode</th>
+                                    <th class="py-2.5 px-3">Tgl Mulai Berlaku</th>
                                     <th class="py-2.5 px-3 text-center">Grade</th>
                                     <th class="py-2.5 px-3 text-center">Level</th>
                                     <th class="py-2.5 px-3 text-right">Gaji Pokok</th>
+                                    <th class="py-2.5 px-3 text-right">Gaji Harian</th>
                                     <th class="py-2.5 px-3 text-right">Gaji/Jam</th>
                                     <th class="py-2.5 px-3">Tunjangan</th>
                                     <th class="py-2.5 px-3">Keterangan / Status</th>
@@ -799,12 +903,16 @@
                                 @forelse($employee->salaryHistories()->orderBy('start_date', 'asc')->get() as $idx => $sh)
                                 <tr class="{{ $sh->is_current ? 'bg-teal-50/40 font-semibold' : '' }}">
                                     <td class="py-2 px-3 text-slate-700 whitespace-nowrap">
-                                        {{ $sh->start_date ? $sh->start_date->format('d/m/Y') : '-' }} &rarr;
-                                        {{ $sh->end_date ? $sh->end_date->format('d/m/Y') : 'Sekarang' }}
+                                        {{ $sh->period ?: ($sh->start_date ? $sh->start_date->format('Y') : '-') }}
+                                    </td>
+                                    <td class="py-2 px-3 text-slate-600 whitespace-nowrap">
+                                        <i class="fa-regular fa-calendar text-[10px] text-emerald-600 mr-1"></i>
+                                        {{ $sh->start_date ? $sh->start_date->format('d/m/Y') : '-' }}
                                     </td>
                                     <td class="py-2 px-3 text-center font-bold text-brand-navy">{{ $sh->line_grade ?? '-' }}</td>
                                     <td class="py-2 px-3 text-center font-bold text-brand-navy">{{ $sh->salary_level ?? '-' }}</td>
                                     <td class="py-2 px-3 text-right font-mono font-bold text-brand-navy">Rp {{ number_format($sh->basic_salary, 0, ',', '.') }}</td>
+                                    <td class="py-2 px-3 text-right font-mono font-medium text-slate-700">Rp {{ number_format($sh->daily_rate, 0, ',', '.') }}</td>
                                     <td class="py-2 px-3 text-right font-mono">Rp {{ number_format($sh->hourly_rate, 0, ',', '.') }}</td>
                                     <td class="py-2 px-3 text-xs">
                                         @if(!empty($sh->allowances_detail))
@@ -826,7 +934,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="7" class="py-3 text-center text-slate-400 text-xs">Belum ada histori perubahan gaji.</td>
+                                    <td colspan="9" class="py-3 text-center text-slate-400 text-xs">Belum ada histori perubahan gaji.</td>
                                 </tr>
                                 @endforelse
                             </tbody>
@@ -834,6 +942,8 @@
                     </div>
                 </div>
             </div>
+
+            @include('employees.partials.modal_add_salary')
             @else
             <!-- ADMIN HRD NOTICE (GAJI DISEMBUNYIKAN SECARA TOTAL) -->
             <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-3 text-xs text-slate-500">
@@ -923,44 +1033,42 @@
             <div class="grid grid-cols-2 gap-8 pt-4 text-center text-xs">
 
                 <!-- Kolom Tanda Tangan Karyawan -->
-                <div class="flex flex-col items-center justify-between min-h-[150px] p-4 rounded-xl border border-slate-200">
-                    <span class="font-bold text-slate-600">Karyawan yang Bersangkutan</span>
+                <div class="flex flex-col items-center justify-between min-h-[175px] p-4 rounded-2xl border border-slate-200 bg-slate-50/40">
+                    <span class="font-black text-xs text-brand-navy uppercase tracking-wider">Karyawan yang Bersangkutan</span>
 
-                    <div class="h-20 flex items-center justify-center my-2">
+                    <div class="h-24 flex items-center justify-center my-2">
                         @php $empSign = $employee->getDocument('employee_signature'); @endphp
                         @if($empSign)
-                        <img src="{{ $empSign->url }}" alt="TTD Karyawan" class="max-h-full max-w-[160px] object-contain">
+                        <img src="{{ $empSign->url }}" alt="TTD Karyawan" class="h-full w-auto max-h-24 max-w-[220px] object-contain">
                         @else
                         <span class="text-[11px] text-slate-300 italic">(Tanda Tangan Asli)</span>
                         @endif
                     </div>
 
-                    <div>
-                        <span class="font-bold text-brand-navy block underline">
+                    <div class="w-full border-t border-slate-200 pt-1.5">
+                        <span class="font-bold text-brand-navy block underline text-xs">
                             {{ $employee->employee_signature_name ?? $employee->full_name }}
                         </span>
-                        <span class="text-[10px] text-slate-400">Nama Terang Karyawan</span>
                     </div>
                 </div>
 
                 <!-- Kolom Tanda Tangan HRD / Pemeriksa -->
-                <div class="flex flex-col items-center justify-between min-h-[150px] p-4 rounded-xl border border-slate-200">
-                    <span class="font-bold text-slate-600">HRD / Pemeriksa</span>
+                <div class="flex flex-col items-center justify-between min-h-[175px] p-4 rounded-2xl border border-slate-200 bg-slate-50/40">
+                    <span class="font-black text-[13px] text-brand-navy uppercase tracking-wider">HRD / Pemeriksa</span>
 
-                    <div class="h-20 flex items-center justify-center my-2">
+                    <div class="h-24 flex items-center justify-center my-2">
                         @php $hrdSign = $employee->getDocument('hrd_signature'); @endphp
                         @if($hrdSign)
-                        <img src="{{ $hrdSign->url }}" alt="TTD HRD" class="max-h-full max-w-[160px] object-contain">
+                        <img src="{{ $hrdSign->url }}" alt="TTD HRD" class="h-full w-auto max-h-24 max-w-[220px] object-contain">
                         @else
                         <span class="text-[11px] text-slate-300 italic">(Tanda Tangan & Cap)</span>
                         @endif
                     </div>
 
-                    <div>
-                        <span class="font-bold text-brand-navy block underline">
-                            {{ $employee->hrd_signature_name ?? 'HRD PT ABP' }}
+                    <div class="w-full border-t border-slate-200 pt-1.5">
+                        <span class="font-bold text-brand-navy block underline text-xs">
+                            {{ ($employee->hrd_signature_name && !in_array($employee->hrd_signature_name, ['Super Admin ABP', 'Admin HRD ABP', 'HRD PT ABP'])) ? $employee->hrd_signature_name : 'HR, Admin Manager' }}
                         </span>
-                        <span class="text-[10px] text-slate-400">Verifikator HRD</span>
                     </div>
                 </div>
 

@@ -77,6 +77,11 @@ Route::middleware('auth')->group(function () {
         // Settings
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+        Route::get('/google/connect', [SettingController::class, 'redirectToGoogle'])->name('settings.google_connect');
+        Route::get('/google/callback', [SettingController::class, 'handleGoogleCallback'])->name('settings.google_callback');
+        Route::post('/google/disconnect', [SettingController::class, 'disconnectGoogle'])->name('settings.google_disconnect');
+        Route::post('/settings/backup-gdrive', [SettingController::class, 'backupDatabaseToGoogleDrive'])->name('settings.backup_gdrive');
+        Route::post('/settings/sync-gdrive', [SettingController::class, 'syncAllDocumentsToGoogleDrive'])->name('settings.sync_gdrive');
     });
 });
 

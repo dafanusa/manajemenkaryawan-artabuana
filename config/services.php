@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect_uri' => env('GOOGLE_REDIRECT_URI', 'http://127.0.0.1:8000/google/callback'),
+        'drive_credentials' => env('GOOGLE_DRIVE_CREDENTIALS', 'manajemen-karwayan-artha-e1251b6d9176.json'),
+        'drive_root_folder_id' => env('GOOGLE_DRIVE_ROOT_FOLDER_ID'),
+    ],
+
 ];

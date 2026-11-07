@@ -22,7 +22,9 @@ class Employee extends Model
             'leave_date' => 'date',
             'last_leave_date' => 'date',
             'basic_salary' => 'decimal:2',
+            'daily_rate' => 'decimal:2',
             'hourly_rate' => 'decimal:2',
+            'salary_effective_date' => 'date',
         ];
     }
 

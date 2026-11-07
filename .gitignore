@@ -22,3 +22,8 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Google Cloud & Private Credentials
+*.json.key
+manajemen-karwayan-artha-*.json
+
