@@ -4,7 +4,7 @@
 @section('page_title', 'Daftar & Manajemen Data Karyawan')
 
 @section('content')
-<div class="space-y-5" x-data="{ filterOpen: {{ request()->anyFilled(['status', 'gender', 'ethnicity', 'religion', 'work_location', 'department', 'incomplete_docs', 'join_year', 'leave_year', 'quick_filter']) ? 'true' : 'false' }} }">
+<div class="space-y-5" x-data="{ filterOpen: {{ request()->anyFilled(['status', 'gender', 'ethnicity', 'religion', 'work_location', 'department', 'incomplete_docs', 'contract_expiring', 'join_year', 'leave_year', 'quick_filter']) ? 'true' : 'false' }} }">
 
     <!-- TOP CONTROLS & ACTIONS -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
@@ -12,7 +12,7 @@
         <!-- Search Bar -->
         <form method="GET" action="{{ route('employees.index') }}" class="flex-1 max-w-lg">
             <!-- Retain current filters -->
-            @foreach(request()->only(['status', 'gender', 'ethnicity', 'religion', 'work_location', 'department', 'incomplete_docs', 'join_year', 'leave_year', 'quick_filter']) as $key => $val)
+            @foreach(request()->only(['status', 'gender', 'ethnicity', 'religion', 'work_location', 'department', 'incomplete_docs', 'contract_expiring', 'join_year', 'leave_year', 'quick_filter']) as $key => $val)
                 <input type="hidden" name="{{ $key }}" value="{{ $val }}">
             @endforeach
 
@@ -47,7 +47,7 @@
                     class="px-3.5 py-2.5 rounded-xl border text-xs font-semibold hover:bg-slate-50 transition flex items-center gap-2">
                 <i class="fa-solid fa-filter text-xs"></i>
                 <span>Filter</span>
-                @if(request()->anyFilled(['status', 'gender', 'ethnicity', 'religion', 'work_location', 'department', 'incomplete_docs', 'join_year', 'leave_year', 'quick_filter']))
+                @if(request()->anyFilled(['status', 'gender', 'ethnicity', 'religion', 'work_location', 'department', 'incomplete_docs', 'contract_expiring', 'join_year', 'leave_year', 'quick_filter']))
                 <span class="w-2 h-2 rounded-full bg-brand-primary"></span>
                 @endif
             </button>
@@ -89,10 +89,20 @@
     <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
         <!-- Semua -->
         <a href="{{ route('employees.index') }}"
-           class="px-3.5 py-2 rounded-2xl font-bold transition flex items-center gap-2 whitespace-nowrap {{ !request()->hasAny(['status', 'join_year', 'leave_year', 'quick_filter', 'incomplete_docs']) ? 'bg-brand-primary text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50' }}">
+           class="px-3.5 py-2 rounded-2xl font-bold transition flex items-center gap-2 whitespace-nowrap {{ !request()->hasAny(['status', 'join_year', 'leave_year', 'quick_filter', 'incomplete_docs', 'contract_expiring']) ? 'bg-brand-primary text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50' }}">
             <span>Semua Karyawan</span>
-            <span class="px-2 py-0.5 rounded-full text-[10px] {{ !request()->hasAny(['status', 'join_year', 'leave_year', 'quick_filter', 'incomplete_docs']) ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600' }}">
+            <span class="px-2 py-0.5 rounded-full text-[10px] {{ !request()->hasAny(['status', 'join_year', 'leave_year', 'quick_filter', 'incomplete_docs', 'contract_expiring']) ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600' }}">
                 {{ $totalCount }}
+            </span>
+        </a>
+
+        <!-- Kontrak Segera Habis (30 Hari) -->
+        <a href="{{ route('employees.index', ['contract_expiring' => 1]) }}"
+           class="px-3.5 py-2 rounded-2xl font-bold transition flex items-center gap-2 whitespace-nowrap {{ request('contract_expiring') ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-amber-50 hover:text-amber-800' }}">
+            <i class="fa-solid fa-file-contract text-[11px] {{ request('contract_expiring') ? 'text-white' : 'text-amber-600' }}"></i>
+            <span>Kontrak Segera Habis (30 Hari)</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] {{ request('contract_expiring') ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-900 font-bold' }}">
+                {{ $expiringContractsCount }}
             </span>
         </a>
 
@@ -238,11 +248,17 @@
                 </select>
             </div>
 
-            <div class="col-span-2 sm:col-span-4 lg:col-span-8 flex items-center justify-between pt-2">
-                <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-amber-800">
-                    <input type="checkbox" name="incomplete_docs" value="1" {{ request('incomplete_docs') ? 'checked' : '' }} class="w-4 h-4 rounded text-amber-600 border-slate-300">
-                    <span>Hanya tampilkan karyawan dengan dokumen belum lengkap</span>
-                </label>
+            <div class="col-span-2 sm:col-span-4 lg:col-span-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-amber-800">
+                        <input type="checkbox" name="incomplete_docs" value="1" {{ request('incomplete_docs') ? 'checked' : '' }} class="w-4 h-4 rounded text-amber-600 border-slate-300">
+                        <span>Hanya dokumen belum lengkap</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-amber-900">
+                        <input type="checkbox" name="contract_expiring" value="1" {{ request('contract_expiring') ? 'checked' : '' }} class="w-4 h-4 rounded text-amber-600 border-slate-300">
+                        <span>Hanya kontrak segera habis (30 hari & lewat batas)</span>
+                    </label>
+                </div>
                 <button type="submit" class="px-5 py-2 bg-brand-navy hover:bg-brand-navy-dark text-white text-xs font-bold rounded-xl transition">
                     Terapkan Filter
                 </button>
@@ -250,17 +266,19 @@
         </form>
     </div>
 
-    <!-- ACTIVE FILTER NOTICE (NEW HIRE / TURNOVER / QUICK FILTER) -->
-    @if(request('join_year') || request('leave_year') || request('quick_filter'))
-    <div class="p-3.5 rounded-2xl bg-teal-50/90 border border-teal-200 flex items-center justify-between text-xs text-brand-navy shadow-sm">
+    <!-- ACTIVE FILTER NOTICE (NEW HIRE / TURNOVER / QUICK FILTER / CONTRACT EXPIRING) -->
+    @if(request('join_year') || request('leave_year') || request('quick_filter') || request('contract_expiring'))
+    <div class="p-3.5 rounded-2xl {{ request('contract_expiring') ? 'bg-amber-50/90 border border-amber-200' : 'bg-teal-50/90 border border-teal-200' }} flex items-center justify-between text-xs text-brand-navy shadow-sm">
         <div class="flex items-center gap-2.5">
-            <div class="w-7 h-7 rounded-lg bg-brand-primary text-white flex items-center justify-center flex-shrink-0">
-                <i class="fa-solid fa-filter text-[11px]"></i>
+            <div class="w-7 h-7 rounded-lg {{ request('contract_expiring') ? 'bg-amber-600' : 'bg-brand-primary' }} text-white flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid {{ request('contract_expiring') ? 'fa-file-contract' : 'fa-filter' }} text-[11px]"></i>
             </div>
             <div>
                 <span class="font-bold">Filter Aktif:</span>
                 <span>
-                    @if(request('join_year'))
+                    @if(request('contract_expiring'))
+                        Karyawan dengan <strong>Masa Kontrak PKWT Segera Berakhir (&le; 30 Hari) atau Telah Lewat Batas</strong>
+                    @elseif(request('join_year'))
                         Karyawan Baru Masuk (New Hire) pada <strong>Tahun {{ request('join_year') }}</strong>
                     @elseif(request('leave_year'))
                         Karyawan Keluar (Turnover / Resign) pada <strong>Tahun {{ request('leave_year') }}</strong>
@@ -273,7 +291,7 @@
                 </span>
             </div>
         </div>
-        <a href="{{ route('employees.index') }}" class="px-3 py-1.5 rounded-xl bg-white border border-teal-200 font-bold text-brand-primary hover:text-rose-600 hover:border-rose-300 transition flex items-center gap-1.5 flex-shrink-0">
+        <a href="{{ route('employees.index') }}" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 font-bold text-brand-navy hover:text-rose-600 hover:border-rose-300 transition flex items-center gap-1.5 flex-shrink-0">
             <i class="fa-solid fa-xmark text-xs"></i>
             <span>Hapus Filter</span>
         </a>

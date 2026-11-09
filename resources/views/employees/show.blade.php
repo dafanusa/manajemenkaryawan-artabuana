@@ -1040,7 +1040,7 @@
 
                 <!-- Kolom Tanda Tangan Karyawan -->
                 <div class="flex flex-col items-center justify-between min-h-[175px] p-4 rounded-2xl border border-slate-200 bg-slate-50/40">
-                    <span class="font-black text-xs text-brand-navy uppercase tracking-wider">Karyawan yang Bersangkutan</span>
+                    <span class="font-normal text-xs text-brand-navy">Karyawan Yang Bersangkutan</span>
 
                     <div class="h-24 flex items-center justify-center my-2">
                         @php $empSign = $employee->getDocument('employee_signature'); @endphp
@@ -1060,7 +1060,7 @@
 
                 <!-- Kolom Tanda Tangan HRD / Pemeriksa -->
                 <div class="flex flex-col items-center justify-between min-h-[175px] p-4 rounded-2xl border border-slate-200 bg-slate-50/40">
-                    <span class="font-black text-[13px] text-brand-navy uppercase tracking-wider">HRD / Pemeriksa</span>
+                    <span class="font-normal text-xs text-brand-navy">HRD / Pemeriksa</span>
 
                     <div class="h-24 flex items-center justify-center my-2">
                         @php $hrdSign = $employee->getDocument('hrd_signature'); @endphp

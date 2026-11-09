@@ -40,7 +40,7 @@
     </div>
 
     <!-- METRICS CARDS -->
-    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
 
         <!-- Total Karyawan -->
         <a href="{{ route('employees.index') }}" class="group bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition">
@@ -104,6 +104,258 @@
                 <i class="fa-solid fa-arrow-right text-[10px]"></i>
             </p>
         </a>
+
+        <!-- Kontrak Segera Habis (Interactive card) -->
+        <a href="{{ $expiringContractsCount > 0 ? '#kontrak-expiring-section' : route('employees.index', ['contract_expiring' => 1]) }}" class="group {{ $expiringContractsCount > 0 ? ($urgentContractsCount > 0 ? 'bg-rose-50/70 border-rose-200 hover:border-rose-300' : 'bg-amber-50/70 border-amber-200 hover:border-amber-300') : 'bg-white border-slate-100 hover:border-teal-300' }} border p-5 rounded-2xl shadow-sm hover:shadow-md transition">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold {{ $expiringContractsCount > 0 ? ($urgentContractsCount > 0 ? 'text-rose-900' : 'text-amber-900') : 'text-slate-500' }} uppercase tracking-wider">Kontrak Mau Habis</span>
+                <div class="w-10 h-10 rounded-xl {{ $expiringContractsCount > 0 ? ($urgentContractsCount > 0 ? 'bg-rose-100 text-rose-700 group-hover:bg-rose-600' : 'bg-amber-100 text-amber-700 group-hover:bg-amber-600') : 'bg-slate-100 text-slate-700 group-hover:bg-brand-navy' }} group-hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-file-contract text-sm"></i>
+                </div>
+            </div>
+            <div class="mt-3 flex items-baseline gap-2">
+                <span class="text-2xl sm:text-3xl font-extrabold {{ $expiringContractsCount > 0 ? ($urgentContractsCount > 0 ? 'text-rose-600' : 'text-amber-800') : 'text-brand-navy' }}">{{ $expiringContractsCount }}</span>
+                <span class="text-xs {{ $expiringContractsCount > 0 ? ($urgentContractsCount > 0 ? 'text-rose-700' : 'text-amber-700') : 'text-slate-400' }} font-medium">Karyawan</span>
+            </div>
+            @if($urgentContractsCount > 0)
+                <p class="text-[11px] text-rose-600 font-bold mt-1 flex items-center gap-1.5">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                    </span>
+                    <span>{{ $urgentContractsCount }} Mendesak (&le; 7 hari)</span>
+                </p>
+            @elseif($expiringContractsCount > 0)
+                <p class="text-[11px] text-amber-700 font-semibold mt-1 flex items-center gap-1">
+                    <span>Sisa &le; 30 hari lagi</span>
+                    <i class="fa-solid fa-arrow-down text-[10px]"></i>
+                </p>
+            @else
+                <p class="text-[11px] text-emerald-600 font-medium mt-1 flex items-center gap-1">
+                    <i class="fa-solid fa-check text-[10px]"></i>
+                    <span>Semua kontrak aman</span>
+                </p>
+            @endif
+        </a>
+
+    </div>
+
+    <!-- PERINGATAN KONTRAK PKWT (EXPIRING CONTRACTS NOTIFICATION SECTION) -->
+    <div id="kontrak-expiring-section"
+         x-data="{ expanded: true, filterUrgency: 'all' }"
+         class="bg-white rounded-3xl border {{ $expiringContractsCount > 0 ? ($urgentContractsCount > 0 ? 'border-rose-200/90 shadow-md shadow-rose-100/40' : 'border-amber-200/90 shadow-md shadow-amber-100/40') : 'border-slate-200/80 shadow-sm' }} p-6 space-y-5 transition-all">
+
+        <!-- Header Toolbar -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div class="space-y-1.5">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full {{ $expiringContractsCount > 0 ? ($urgentContractsCount > 0 ? 'bg-rose-500 animate-ping' : 'bg-amber-500') : 'bg-emerald-500' }}"></span>
+                    <h3 class="text-base sm:text-lg font-extrabold text-brand-navy flex items-center gap-2">
+                        <i class="fa-solid fa-file-signature {{ $expiringContractsCount > 0 ? ($urgentContractsCount > 0 ? 'text-rose-500' : 'text-amber-500') : 'text-emerald-600' }}"></i>
+                        <span>Peringatan Masa Kontrak PKWT (Segera Berakhir &le; 30 Hari)</span>
+                    </h3>
+                    @if($expiringContractsCount > 0)
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold {{ $urgentContractsCount > 0 ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-amber-100 text-amber-900 border border-amber-200' }}">
+                            {{ $expiringContractsCount }} Karyawan Perlu Evaluasi
+                        </span>
+                    @else
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Semua Kontrak Aman
+                        </span>
+                    @endif
+                </div>
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    Notifikasi berkala kontrak PKWT yang akan berakhir dalam kurun waktu <strong>30 hari (1 bulan)</strong> ke depan atau telah lewat batas waktu. 
+                    <span class="text-teal-700 font-semibold">Angka hitung mundur hari otomatis berkurang setiap hari</span> untuk mengingatkan HRD melakukan evaluasi atau perpanjangan kontrak.
+                </p>
+            </div>
+
+            <!-- Header Actions & Urgency Badges -->
+            <div class="flex flex-wrap items-center gap-2 self-start md:self-auto">
+                @if($expiringContractsCount > 0)
+                    @if($urgentContractsCount > 0)
+                    <div class="px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-1.5" title="Kontrak kritis (&le; 7 hari) atau telah lewat batas">
+                        <i class="fa-solid fa-circle-exclamation text-rose-600"></i>
+                        <span>{{ $urgentContractsCount }} Mendesak</span>
+                    </div>
+                    @endif
+
+                    @if($warningContractsCount > 0)
+                    <div class="px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold flex items-center gap-1.5" title="Kontrak berakhir dalam 8 - 30 hari">
+                        <i class="fa-regular fa-clock text-amber-600"></i>
+                        <span>{{ $warningContractsCount }} Peringatan (8-30 Hari)</span>
+                    </div>
+                    @endif
+                @endif
+
+                <!-- Collapse / Expand Toggle Button -->
+                <button type="button" @click="expanded = !expanded" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1.5">
+                    <span x-text="expanded ? 'Sembunyikan' : 'Tampilkan'"></span>
+                    <i :class="expanded ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'" class="text-[10px]"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Collapsible Content -->
+        <div x-show="expanded" x-collapse>
+            @if($expiringContractsCount > 0)
+                <div class="space-y-4">
+                    <!-- Filter Toolbar -->
+                    <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
+                        <div class="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-xl">
+                            <button type="button" @click="filterUrgency = 'all'" :class="filterUrgency === 'all' ? 'bg-white text-brand-navy font-bold shadow-xs' : 'text-slate-500 hover:text-slate-800 font-medium'" class="px-3 py-1 rounded-lg transition">
+                                Semua ({{ $expiringContractsCount }})
+                            </button>
+                            @if($urgentContractsCount > 0)
+                            <button type="button" @click="filterUrgency = 'urgent'" :class="filterUrgency === 'urgent' ? 'bg-white text-rose-700 font-bold shadow-xs' : 'text-slate-500 hover:text-rose-600 font-medium'" class="px-3 py-1 rounded-lg transition">
+                                Mendesak (&le; 7 Hari / Lewat: {{ $urgentContractsCount }})
+                            </button>
+                            @endif
+                            @if($warningContractsCount > 0)
+                            <button type="button" @click="filterUrgency = 'warning'" :class="filterUrgency === 'warning' ? 'bg-white text-amber-800 font-bold shadow-xs' : 'text-slate-500 hover:text-amber-800 font-medium'" class="px-3 py-1 rounded-lg transition">
+                                Peringatan (8 - 30 Hari: {{ $warningContractsCount }})
+                            </button>
+                            @endif
+                        </div>
+
+                        <a href="{{ route('employees.index', ['contract_expiring' => 1]) }}" class="inline-flex items-center gap-1.5 font-bold text-brand-primary hover:text-brand-primary-hover transition">
+                            <span>Buka di Menu Data Karyawan</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
+                        </a>
+                    </div>
+
+                    <!-- Contracts Table -->
+                    <div class="overflow-x-auto rounded-2xl border border-slate-200/80">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50/90 text-slate-600 font-bold border-b border-slate-200 uppercase text-[10px] tracking-wider">
+                                <tr>
+                                    <th class="py-3 px-4">Karyawan</th>
+                                    <th class="py-3 px-3">Kontrak PKWT</th>
+                                    <th class="py-3 px-3">Jabatan & Departemen</th>
+                                    <th class="py-3 px-3">Periode Kontrak</th>
+                                    <th class="py-3 px-3 text-center">Hitung Mundur (Sisa Hari)</th>
+                                    <th class="py-3 px-4 text-right">Aksi HRD</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 text-slate-700">
+                                @foreach($expiringContracts as $cnt)
+                                <tr x-show="filterUrgency === 'all' || (filterUrgency === 'urgent' && '{{ in_array($cnt->urgency_level, ['expired', 'today', 'urgent']) ? 'true' : 'false' }}' === 'true') || (filterUrgency === 'warning' && '{{ $cnt->urgency_level === 'warning' ? 'true' : 'false' }}' === 'true')"
+                                    class="hover:bg-slate-50/80 transition {{ $cnt->days_remaining <= 0 ? 'bg-rose-50/30' : ($cnt->days_remaining <= 7 ? 'bg-rose-50/20' : '') }}">
+                                    <!-- Employee Info -->
+                                    <td class="py-3.5 px-4">
+                                        <div class="flex items-center gap-3">
+                                            @if($cnt->employee && $cnt->employee->photo)
+                                                <img src="{{ asset('storage/' . $cnt->employee->photo) }}" alt="{{ $cnt->employee->full_name }}" class="w-10 h-10 rounded-xl object-cover shadow-xs border border-slate-200">
+                                            @else
+                                                <div class="w-10 h-10 rounded-xl bg-teal-50 text-brand-primary font-bold flex items-center justify-center text-xs border border-teal-100">
+                                                    {{ strtoupper(substr($cnt->employee->full_name ?? 'K', 0, 1)) }}
+                                                </div>
+                                            @endif
+                                            <div>
+                                                @if($cnt->employee)
+                                                    <a href="{{ route('employees.show', $cnt->employee->id) }}" class="font-bold text-brand-navy hover:text-brand-primary hover:underline block leading-tight">
+                                                        {{ $cnt->employee->full_name }}
+                                                    </a>
+                                                    <span class="text-[10px] text-slate-400 font-mono">{{ $cnt->employee->employee_id }}</span>
+                                                @else
+                                                    <span class="font-bold text-slate-600">ID Karyawan: #{{ $cnt->employee_id }}</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <!-- Contract Sequence & Number -->
+                                    <td class="py-3.5 px-3">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-teal-50 text-brand-primary border border-teal-200/60">
+                                                Kontrak {{ $cnt->contract_sequence }}
+                                            </span>
+                                        </div>
+                                        <p class="font-mono text-slate-800 font-semibold text-[11px] mt-0.5">{{ $cnt->contract_number }}</p>
+                                    </td>
+
+                                    <!-- Position & Department -->
+                                    <td class="py-3.5 px-3">
+                                        <span class="font-semibold text-slate-800 block">{{ $cnt->position ?? ($cnt->employee->position ?? '-') }}</span>
+                                        <span class="text-[10px] text-slate-400">{{ $cnt->department ?? ($cnt->employee->department ?? '-') }}</span>
+                                    </td>
+
+                                    <!-- Contract Dates -->
+                                    <td class="py-3.5 px-3 whitespace-nowrap">
+                                        <span class="text-slate-500 block text-[11px]">
+                                            Mulai: <strong class="text-slate-700">{{ $cnt->start_date ? $cnt->start_date->format('d/m/Y') : '-' }}</strong>
+                                        </span>
+                                        <span class="text-slate-500 block text-[11px] mt-0.5">
+                                            Akhir: <strong class="text-slate-900 font-bold">{{ $cnt->end_date ? $cnt->end_date->format('d/m/Y') : '-' }}</strong>
+                                        </span>
+                                    </td>
+
+                                    <!-- Countdown Badge (Live Decreasing) -->
+                                    <td class="py-3.5 px-3 text-center">
+                                        @if($cnt->days_remaining < 0)
+                                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-300 shadow-xs">
+                                                <i class="fa-solid fa-triangle-exclamation text-red-600"></i>
+                                                <span>Telah Berakhir {{ abs($cnt->days_remaining) }} Hari Lalu</span>
+                                            </span>
+                                        @elseif($cnt->days_remaining === 0)
+                                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-rose-600 text-white animate-pulse shadow-sm">
+                                                <i class="fa-solid fa-bell"></i>
+                                                <span>Hari Ini Berakhir!</span>
+                                            </span>
+                                        @elseif($cnt->days_remaining <= 7)
+                                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300 shadow-xs">
+                                                <i class="fa-solid fa-hourglass-half text-rose-600"></i>
+                                                <span>Sisa {{ $cnt->days_remaining }} Hari Lagi</span>
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                                                <i class="fa-regular fa-clock text-amber-700"></i>
+                                                <span>Sisa {{ $cnt->days_remaining }} Hari Lagi</span>
+                                            </span>
+                                        @endif
+                                    </td>
+
+                                    <!-- Quick Actions -->
+                                    <td class="py-3.5 px-4 text-right">
+                                        <div class="inline-flex items-center gap-2">
+                                            @if($cnt->employee)
+                                                <a href="{{ route('employees.edit', $cnt->employee->id) }}#section-contracts"
+                                                   class="px-3 py-1.5 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5"
+                                                   title="Buka form perpanjangan kontrak untuk karyawan ini">
+                                                    <i class="fa-solid fa-file-signature text-[11px]"></i>
+                                                    <span>Perpanjang</span>
+                                                </a>
+                                                <a href="{{ route('employees.show', $cnt->employee->id) }}"
+                                                   class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs transition"
+                                                   title="Lihat Profil & Riwayat Kontrak Lengkap">
+                                                    <i class="fa-regular fa-eye"></i>
+                                                </a>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @else
+                <div class="p-6 bg-emerald-50/60 border border-emerald-200/80 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg flex-shrink-0">
+                            <i class="fa-solid fa-shield-check"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs sm:text-sm font-bold text-emerald-950">Seluruh Kontrak PKWT Masih Aktif & Aman</h4>
+                            <p class="text-[11px] text-emerald-700 mt-0.5">Tidak ada kontrak kerja karyawan aktif yang akan berakhir dalam kurun waktu 30 hari ke depan.</p>
+                        </div>
+                    </div>
+                    <a href="{{ route('employees.index') }}" class="px-4 py-2 bg-white text-emerald-800 hover:bg-emerald-100 border border-emerald-300 font-bold text-xs rounded-xl transition flex-shrink-0">
+                        Lihat Data Karyawan
+                    </a>
+                </div>
+            @endif
+        </div>
 
     </div>
 
@@ -647,8 +899,54 @@
             </div>
         </div>
 
-        <!-- Activity Timeline / Incomplete Docs (1 Col) -->
+        <!-- Activity Timeline / Incomplete Docs / Contract Alert (1 Col) -->
         <div class="space-y-6">
+
+            <!-- Peringatan Kontrak PKWT (Sidebar Card) -->
+            <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-xs font-bold text-brand-navy uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-file-signature text-amber-500"></i>
+                        <span>Kontrak Mau Habis ({{ $expiringContractsCount }})</span>
+                    </h4>
+                    <a href="#kontrak-expiring-section" class="text-[11px] font-bold text-brand-primary hover:underline">Detail</a>
+                </div>
+
+                @if($expiringContractsCount === 0)
+                <div class="p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-center">
+                    <i class="fa-solid fa-shield-check text-emerald-500 text-lg mb-1 block"></i>
+                    <p class="text-xs font-bold text-emerald-800">Semua Kontrak Aman!</p>
+                    <p class="text-[10px] text-emerald-600 mt-0.5">Tidak ada kontrak berakhir dalam 30 hari.</p>
+                </div>
+                @else
+                <div class="space-y-2.5 max-h-52 overflow-y-auto pr-1">
+                    @foreach($expiringContracts->take(4) as $cnt)
+                    <div class="p-2.5 rounded-xl border {{ $cnt->days_remaining <= 7 ? 'border-rose-200 bg-rose-50/40' : 'border-amber-200 bg-amber-50/40' }} flex items-center justify-between text-xs">
+                        <div class="min-w-0 pr-2">
+                            <a href="{{ route('employees.show', $cnt->employee_id) }}" class="font-bold text-slate-800 hover:text-brand-primary truncate block text-xs">
+                                {{ $cnt->employee->full_name ?? 'Karyawan' }}
+                            </a>
+                            <div class="flex items-center gap-1.5 mt-0.5">
+                                <span class="text-[10px] font-bold {{ $cnt->days_remaining <= 0 ? 'text-red-700' : ($cnt->days_remaining <= 7 ? 'text-rose-700' : 'text-amber-800') }}">
+                                    @if($cnt->days_remaining < 0)
+                                        Lewat {{ abs($cnt->days_remaining) }} hr
+                                    @elseif($cnt->days_remaining === 0)
+                                        Hari ini berakhir!
+                                    @else
+                                        Sisa {{ $cnt->days_remaining }} hr
+                                    @endif
+                                </span>
+                                <span class="text-[10px] text-slate-400">&bull; {{ $cnt->end_date ? $cnt->end_date->format('d/m/Y') : '' }}</span>
+                            </div>
+                        </div>
+                        <a href="{{ route('employees.edit', $cnt->employee_id) }}#section-contracts" class="px-2.5 py-1 bg-white border border-slate-200 hover:border-brand-primary text-[10px] font-bold rounded-lg text-brand-primary shadow-xs transition flex-shrink-0">
+                            Perpanjang
+                        </a>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+            </div>
 
             <!-- Incomplete Docs Card -->
             <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">

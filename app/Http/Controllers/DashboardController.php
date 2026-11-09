@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use App\Models\Employee;
+use App\Models\EmployeeContract;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -128,6 +130,60 @@ class DashboardController extends Controller
         $currentYearHires = Employee::whereYear('join_date', $currentYear)->count();
         $currentYearDepartures = Employee::whereYear('leave_date', $currentYear)->count();
 
+        // 13. Peringatan Kontrak PKWT (Expiring Contracts Notification - 30 Hari & Telah Berakhir)
+        $today = Carbon::today('Asia/Jayapura');
+        $thresholdDays = 30;
+        $thresholdDate = $today->copy()->addDays($thresholdDays)->endOfDay();
+
+        // Ambil ID kontrak terbaru per karyawan aktif (abaikan status 'Diperpanjang')
+        $latestContractIds = EmployeeContract::selectRaw('MAX(id) as id')
+            ->where('status', '!=', 'Diperpanjang')
+            ->groupBy('employee_id');
+
+        $expiringContracts = EmployeeContract::with(['employee' => function ($q) {
+                $q->select('id', 'full_name', 'employee_id', 'photo', 'position', 'department', 'employment_status');
+            }])
+            ->whereIn('id', $latestContractIds)
+            ->whereNotNull('end_date')
+            ->whereHas('employee', function ($q) {
+                $q->where('employment_status', 'Aktif');
+            })
+            ->whereDate('end_date', '<=', $thresholdDate)
+            ->orderBy('end_date', 'asc')
+            ->get()
+            ->map(function ($contract) use ($today) {
+                $endDate = Carbon::parse($contract->end_date)->startOfDay();
+                // Hitung selisih hari dari hari ini ke tanggal berakhir
+                // Nilai minus: sudah lewat (expired), 0: hari ini berakhir, positif: sisa hari
+                $daysRemaining = (int) $today->diffInDays($endDate, false);
+                $contract->days_remaining = $daysRemaining;
+
+                if ($daysRemaining < 0) {
+                    $contract->urgency_level = 'expired';
+                    $contract->urgency_title = 'Telah Berakhir';
+                    $contract->status_label = 'Telah Berakhir ' . abs($daysRemaining) . ' Hari Lalu';
+                } elseif ($daysRemaining === 0) {
+                    $contract->urgency_level = 'today';
+                    $contract->urgency_title = 'Hari Ini Berakhir';
+                    $contract->status_label = 'Hari Ini Berakhir!';
+                } elseif ($daysRemaining <= 7) {
+                    $contract->urgency_level = 'urgent';
+                    $contract->urgency_title = 'Kritis (< 1 Minggu)';
+                    $contract->status_label = 'Sisa ' . $daysRemaining . ' Hari Lagi';
+                } else {
+                    $contract->urgency_level = 'warning';
+                    $contract->urgency_title = 'Peringatan (1 Bulan)';
+                    $contract->status_label = 'Sisa ' . $daysRemaining . ' Hari Lagi';
+                }
+
+                return $contract;
+            });
+
+        $expiringContractsCount = $expiringContracts->count();
+        $urgentContractsCount = $expiringContracts->whereIn('urgency_level', ['expired', 'today', 'urgent'])->count();
+        $warningContractsCount = $expiringContracts->where('urgency_level', 'warning')->count();
+        $expiredContractsCount = $expiringContracts->where('urgency_level', 'expired')->count();
+
         return view('dashboard.index', compact(
             'totalEmployees',
             'activeEmployees',
@@ -165,7 +221,12 @@ class DashboardController extends Controller
             'yearNewHires',
             'yearDepartures',
             'currentYearHires',
-            'currentYearDepartures'
+            'currentYearDepartures',
+            'expiringContracts',
+            'expiringContractsCount',
+            'urgentContractsCount',
+            'warningContractsCount',
+            'expiredContractsCount'
         ));
     }
 }

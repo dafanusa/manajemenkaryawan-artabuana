@@ -95,6 +95,26 @@ class EmployeeController extends Controller
             $query = Employee::whereIn('id', $incompleteIds)->with('documents');
         }
 
+        // Filter expiring contracts (PKWT 30 hari & telah lewat batas)
+        $thresholdExpiringDate = now()->addDays(30)->endOfDay();
+        $latestContractIdsSub = EmployeeContract::selectRaw('MAX(id) as id')
+            ->where('status', '!=', 'Diperpanjang')
+            ->groupBy('employee_id');
+
+        $expiringEmployeeIds = EmployeeContract::whereIn('id', $latestContractIdsSub)
+            ->whereNotNull('end_date')
+            ->whereHas('employee', function ($q) {
+                $q->where('employment_status', 'Aktif');
+            })
+            ->whereDate('end_date', '<=', $thresholdExpiringDate)
+            ->pluck('employee_id');
+
+        $expiringContractsCount = $expiringEmployeeIds->count();
+
+        if ($request->boolean('contract_expiring')) {
+            $query->whereIn('id', $expiringEmployeeIds);
+        }
+
         // Sort
         $sortColumn = $request->input('sort', 'created_at');
         $sortDirection = $request->input('direction', 'desc');
@@ -138,7 +158,8 @@ class EmployeeController extends Controller
             'inactiveCount',
             'newHiresThisYearCount',
             'leaveThisYearCount',
-            'availableYears'
+            'availableYears',
+            'expiringContractsCount'
         ));
     }
 

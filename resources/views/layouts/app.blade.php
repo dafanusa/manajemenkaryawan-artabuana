@@ -296,6 +296,10 @@
                            class="block py-2 px-3 rounded-lg text-xs {{ request('status') === 'Tidak Aktif' ? 'text-amber-400 font-semibold bg-white/5' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
                             • Karyawan Tidak Aktif
                         </a>
+                        <a href="{{ route('employees.index', ['contract_expiring' => 1]) }}"
+                           class="block py-2 px-3 rounded-lg text-xs {{ request('contract_expiring') ? 'text-amber-300 font-semibold bg-white/5' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
+                            • Kontrak Mau Habis
+                        </a>
                     </div>
                 </div>
 

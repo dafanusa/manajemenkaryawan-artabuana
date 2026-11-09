@@ -1398,7 +1398,7 @@
             </div>
 
             <!-- RIWAYAT KONTRAK KARYAWAN PKWT (Sesuai Revisi #7) -->
-            <div class="space-y-4 pt-4 border-t border-slate-100">
+            <div id="section-contracts" class="space-y-4 pt-4 border-t border-slate-100 scroll-mt-24">
                 <div class="flex items-center justify-between">
                     <div>
                         <h4 class="text-xs font-bold text-brand-navy uppercase tracking-wider flex items-center gap-2">
