@@ -645,7 +645,7 @@
             <div class="grid grid-cols-2 gap-8 pt-2 text-center print-card">
                 <!-- TTD Karyawan -->
                 <div style="background-color: #ffffff;" class="flex flex-col items-center justify-between h-36 border border-slate-300 p-2.5 rounded-xl">
-                    <span class="font-black text-[12px] text-[#2A3956] uppercase tracking-wider">KARYAWAN YANG BERSANGKUTAN</span>
+                    <span class="font-black text-[12px] text-[#2A3956] uppercase tracking-wider">Karyawan Yang Bersangkutan</span>
                     <div class="h-20 flex items-center justify-center my-0.5">
                         @php $empSign = $employee->getDocument('employee_signature'); @endphp
                         @if($empSign)
@@ -661,7 +661,7 @@
 
                 <!-- TTD HRD / Pemeriksa -->
                 <div style="background-color: #ffffff;" class="flex flex-col items-center justify-between h-36 border border-slate-300 p-2.5 rounded-xl">
-                    <span class="font-black text-[13px] text-[#2A3956] uppercase tracking-wider">HRD / PEMERIKSA</span>
+                    <span class="font-black text-[13px] text-[#2A3956] uppercase tracking-wider">HRD / Pemeriksa</span>
                     <div class="h-20 flex items-center justify-center my-0.5">
                         @php $hrdSign = $employee->getDocument('hrd_signature'); @endphp
                         @if($hrdSign)
@@ -700,7 +700,7 @@
             }
 
             const element = document.querySelector('.print-container');
-            
+
             // Simpan status class kartu web
             const hadShadow = element.classList.contains('shadow-lg');
             const hadRounded = element.classList.contains('rounded-2xl');

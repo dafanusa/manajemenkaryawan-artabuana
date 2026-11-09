@@ -16,6 +16,25 @@
         }
     },
 
+    // Auto-fill nama terang TTD karyawan dari nama lengkap
+    fullName: @js(old('full_name', $employee->full_name)),
+    employeeSignatureName: @js(old('employee_signature_name', $employee->employee_signature_name ?: $employee->full_name)),
+    signatureNameTouched: @js((old('employee_signature_name', $employee->employee_signature_name) && old('employee_signature_name', $employee->employee_signature_name) !== old('full_name', $employee->full_name)) ? true : false),
+    onFullNameInput(val) {
+        this.fullName = val;
+        if (!this.signatureNameTouched) {
+            this.employeeSignatureName = val;
+        }
+    },
+    onSignatureNameInput(val) {
+        this.signatureNameTouched = true;
+        this.employeeSignatureName = val;
+        if (!val.trim()) {
+            this.signatureNameTouched = false;
+            this.employeeSignatureName = this.fullName;
+        }
+    },
+
     // Department quick add
     deptList: @js($departments),
     selectedDepartment: @js(old('department', $employee->department)),
@@ -418,7 +437,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 <div class="sm:col-span-2">
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">Nama Lengkap Sesuai KTP <span class="text-red-500">*</span></label>
-                    <input type="text" name="full_name" value="{{ old('full_name', $employee->full_name) }}" required class="w-full py-2.5 px-3.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-primary">
+                    <input type="text" name="full_name" x-model="fullName" @input="onFullNameInput($event.target.value)" value="{{ old('full_name', $employee->full_name) }}" required class="w-full py-2.5 px-3.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-primary">
                 </div>
 
                 <div>
@@ -1896,8 +1915,12 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Nama Karyawan</label>
-                        <input type="text" name="employee_signature_name" value="{{ old('employee_signature_name', $employee->employee_signature_name) }}" class="w-full py-2 px-3 rounded-xl border border-slate-200 text-xs">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-bold text-slate-700">Nama Karyawan</label>
+                            <span class="text-[10px] text-teal-600 font-medium"><i class="fa-solid fa-arrows-rotate mr-1"></i>Otomatis dari Data Diri</span>
+                        </div>
+                        <input type="text" name="employee_signature_name" x-model="employeeSignatureName" @input="onSignatureNameInput($event.target.value)" value="{{ old('employee_signature_name', $employee->employee_signature_name) }}" class="w-full py-2 px-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-primary bg-white">
+                        <p class="text-[10px] text-slate-400 mt-1">Terisi otomatis sesuai nama lengkap di data diri, atau dapat disesuaikan jika diperlukan.</p>
                     </div>
 
                     <div>

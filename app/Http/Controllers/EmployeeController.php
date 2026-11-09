@@ -302,6 +302,11 @@ class EmployeeController extends Controller
                 $validated['photo'] = $photoPath;
             }
 
+            // Nama TTD karyawan otomatis disamakan dengan nama lengkap jika tidak diisi khusus
+            if (empty($validated['employee_signature_name'])) {
+                $validated['employee_signature_name'] = $validated['full_name'];
+            }
+
             // Create Employee
             $employee = Employee::create($validated);
 
@@ -923,6 +928,11 @@ class EmployeeController extends Controller
                     ]);
                     $validated['salary_effective_date'] = $effectiveDate;
                 }
+            }
+
+            // Nama TTD karyawan otomatis disamakan dengan nama lengkap jika tidak diisi khusus
+            if (empty($validated['employee_signature_name'])) {
+                $validated['employee_signature_name'] = $validated['full_name'];
             }
 
             // Update main employee fields

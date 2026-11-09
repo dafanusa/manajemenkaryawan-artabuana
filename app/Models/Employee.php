@@ -138,4 +138,12 @@ class Employee extends Model
     {
         return count($this->missingDocuments()) === 0;
     }
+
+    /**
+     * Fallback otomatis nama TTD karyawan ke nama lengkap jika kosong.
+     */
+    public function getEmployeeSignatureNameAttribute($value): ?string
+    {
+        return $value ?: $this->full_name;
+    }
 }
