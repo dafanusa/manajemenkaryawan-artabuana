@@ -255,7 +255,18 @@ class EmployeeController extends Controller
             $rules['doc_salary_slip'] = ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'];
         }
 
-        $validated = $request->validate($rules);
+        $validated = $request->validate($rules, [
+            'full_name.required' => 'Nama lengkap wajib diisi.',
+            'gender.required' => 'Jenis kelamin wajib dipilih.',
+            'religion.required' => 'Agama wajib dipilih.',
+            'ethnicity.required' => 'Suku wajib dipilih.',
+            'employee_id.required' => 'ID karyawan wajib diisi.',
+            'position.required' => 'Jabatan wajib diisi.',
+            'department.required' => 'Departemen wajib dipilih.',
+            'employment_status.required' => 'Status kepegawaian wajib dipilih.',
+            'work_location.required' => 'Lokasi kerja wajib dipilih.',
+            'join_date.required' => 'Tanggal mulai kerja wajib diisi.',
+        ]);
 
         // If not super admin, strictly ensure salary fields are not present or set to 0
         if (!$isSuperAdmin) {
